@@ -18,6 +18,10 @@ public class Person {
     public void addAge() {
         age++;
     }
+    // Adds or subtracts money from savings
+    public void updateSavings(double amount) {
+        this.savings += amount;
+    }
 
     public void printFinancialSummary() {
         System.out.println("\n--- " + name + "'s Finances (Age " + age + ") ---");
