@@ -26,6 +26,10 @@ public class Person {
     // Note: If your money variable is named something else like 'balance', change this!
     return this.savings; 
     }
+    public String getName() {
+    // This allows the GUI to ask the person for their name!
+    return this.name; 
+    }
 
     public void printFinancialSummary() {
         System.out.println("\n--- " + name + "'s Finances (Age " + age + ") ---");
