@@ -17,7 +17,11 @@ public class TestGUI {
         // 3. Create your Components (Text and a Button)
         JLabel titleText = new JLabel("Welcome to the visual Finance Simulator!");
         JButton clickButton = new JButton("Invest $1,000");
-
+        // Add an "ear" to the button so it listens for clicks
+        clickButton.addActionListener(e -> {
+            System.out.println("Cha-ching! The button was clicked!");
+            titleText.setText("Money invested successfully!");
+        });
         // 4. Glue everything together!
         panel.add(titleText); // Put text on the canvas
         panel.add(clickButton); // Put button on the canvas
