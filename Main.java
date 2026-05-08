@@ -14,7 +14,7 @@ public class Main {
         Person player = new Person(playerName, 22, 50000.0);
         Budget playerBudget = new Budget(1200.0, 400.0, 300.0, 200.0);
         
-        // ✨ PARTNER B ADDITION: The History Tracker
+        
         ArrayList<String> lifeHistory = new ArrayList<>();
         
         System.out.println("\nStarting simulation for " + playerName + "...\n");
@@ -28,12 +28,12 @@ public class Main {
             LifeEvent thisYearsEvent = LifeEvent.generateRandomEvent();
             System.out.println("Event: " + thisYearsEvent.getEventName() + " (Impact: $" + thisYearsEvent.getFinancialImpact() + ")");
             
-            // ✨ PARTNER B ADDITION: Record the event in our ArrayList
+            
             lifeHistory.add("Year " + year + ": " + thisYearsEvent.getEventName());
             
             double netSavingsThisYear = yearlySavings + thisYearsEvent.getFinancialImpact();
             
-            // ✨ PARTNER B ADDITION: The User Choice
+            
             System.out.println("\nYou have $" + netSavingsThisYear + " left over this year.");
             System.out.println("What do you want to do with it?");
             System.out.println("1. Put it in a Savings Account");
@@ -41,7 +41,7 @@ public class Main {
             System.out.print("Enter choice (1 or 2): ");
             
             int choice = input.nextInt();
-            input.nextLine(); // CRITICAL AP CSA FIX: This eats the hidden "Enter" key press so the scanner doesn't break!
+            input.nextLine(); 
             
             if (choice == 1) {
                 System.out.println("-> You kept your money safe in the bank.");
@@ -66,7 +66,7 @@ public class Main {
         
         System.out.println("🎉 10-YEAR SIMULATION COMPLETE! 🎉");
         
-        // ✨ PARTNER B ADDITION: Print the ArrayList History
+        
         System.out.println("\n--- " + playerName + "'s 10-Year Life History ---");
         for (int i = 0; i < lifeHistory.size(); i++) {
             System.out.println(lifeHistory.get(i));
