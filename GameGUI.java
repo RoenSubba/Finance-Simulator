@@ -1,6 +1,6 @@
 import javax.swing.*;
 import java.awt.*;
-import java.util.Random; //roen//
+import java.util.Random; 
 
 public class GameGUI {
     static Person player;
