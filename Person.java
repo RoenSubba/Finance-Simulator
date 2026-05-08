@@ -22,6 +22,10 @@ public class Person {
     public void updateSavings(double amount) {
         this.savings += amount;
     }
+    public double getSavings() {
+    // Note: If your money variable is named something else like 'balance', change this!
+    return this.savings; 
+    }
 
     public void printFinancialSummary() {
         System.out.println("\n--- " + name + "'s Finances (Age " + age + ") ---");
