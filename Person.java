@@ -1,42 +1,34 @@
 public class Person {
     private String name;
     private int age;
-    private double savings;
-    private double debt;
-    private double income;
+    private double cash;          // Safe money (Savings account)
+    private double investments;   // Risky money (Stock Market)
+    private int happiness;        // Opportunity cost metric (0-100)
 
-    // Constructor
-    public Person(String name, int startingAge, double startingIncome) {
+    public Person(String name) {
         this.name = name;
-        this.age = startingAge;
-        this.income = startingIncome;
-        this.savings = 5000.0; // Everyone starts with $5k
-        this.debt = 0.0;
+        this.age = 16;            // Start exactly at 16
+        this.cash = 1000.0;       // Starting teen cash
+        this.investments = 0.0;
+        this.happiness = 100;     // Starts happy!
     }
 
-    // Methods
-    public void addAge() {
-        age++;
-    }
-    // Adds or subtracts money from savings
-    public void updateSavings(double amount) {
-        this.savings += amount;
-    }
-    public double getSavings() {
-    // Note: If your money variable is named something else like 'balance', change this!
-    return this.savings; 
-    }
-    public String getName() {
-    // This allows the GUI to ask the person for their name!
-    return this.name; 
-    }
+    // --- GETTERS ---
+    public String getName() { return name; }
+    public int getAge() { return age; }
+    public double getCash() { return cash; }
+    public double getInvestments() { return investments; }
+    public double getNetWorth() { return cash + investments; }
+    public int getHappiness() { return happiness; }
 
-    public void printFinancialSummary() {
-        System.out.println("\n--- " + name + "'s Finances (Age " + age + ") ---");
-        System.out.println("Income:  $" + income);
-        System.out.println("Savings: $" + savings);
-        System.out.println("Debt:    $" + debt);
-        System.out.println("Net Worth: $" + (savings - debt));
-        System.out.println("------------------------------------");
+    // --- SETTERS / MODIFIERS ---
+    public void addAge(int years) { this.age += years; }
+    public void addCash(double amount) { this.cash += amount; }
+    public void addInvestments(double amount) { this.investments += amount; }
+    
+    public void modifyHappiness(int amount) {
+        this.happiness += amount;
+        if (this.happiness > 100) this.happiness = 100;
+        if (this.happiness < 0) this.happiness = 0;
     }
 }
