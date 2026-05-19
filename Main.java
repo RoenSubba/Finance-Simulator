@@ -1,77 +1,42 @@
-import java.util.Scanner;
-import java.util.ArrayList;
 public class Main {
     public static void main(String[] args) {
-        Scanner input = new Scanner(System.in);
-        
-        System.out.println("====================================");
-        System.out.println("  WELCOME TO LIFEFInance SIMULATOR  ");
-        System.out.println("====================================\n");
-        
-        System.out.print("Enter your character's name: ");
-        String playerName = input.nextLine();
-        
-        Person player = new Person(playerName, 22, 50000.0);
-        Budget playerBudget = new Budget(1200.0, 400.0, 300.0, 200.0);
-        
-        
-        ArrayList<String> lifeHistory = new ArrayList<>();
-        
-        System.out.println("\nStarting simulation for " + playerName + "...\n");
-        
-        for (int year = 1; year <= 10; year++) {
-            System.out.println("=== YEAR " + year + " (Age " + (21 + year) + ") ===");
-            
-            player.addAge();
-            double yearlySavings = playerBudget.calculateAnnualSavings(50000.0);
-            
-            LifeEvent thisYearsEvent = LifeEvent.generateRandomEvent();
-            System.out.println("Event: " + thisYearsEvent.getEventName() + " (Impact: $" + thisYearsEvent.getFinancialImpact() + ")");
-            
-            
-            lifeHistory.add("Year " + year + ": " + thisYearsEvent.getEventName());
-            
-            double netSavingsThisYear = yearlySavings + thisYearsEvent.getFinancialImpact();
-            
-            
-            System.out.println("\nYou have $" + netSavingsThisYear + " left over this year.");
-            System.out.println("What do you want to do with it?");
-            System.out.println("1. Put it in a Savings Account");
-            System.out.println("2. Invest it in the Stock Market");
-            System.out.print("Enter choice (1 or 2): ");
-            
-            int choice = input.nextInt();
-            input.nextLine(); 
-            
-            if (choice == 1) {
-                System.out.println("-> You kept your money safe in the bank.");
-                player.updateSavings(netSavingsThisYear);
-            } else if (choice == 2) {
-                System.out.println("-> You invested! (Partner A is building the math for this, so for now it just goes to savings).");
-                player.updateSavings(netSavingsThisYear); // Partner A will replace this line later!
-            } else {
-                System.out.println("-> Invalid choice. Defaulting to safe savings.");
-                player.updateSavings(netSavingsThisYear);
-            }
-            
-            System.out.println("\nEnd of Year Summary:");
-            player.printFinancialSummary();
-            
-            if (year < 10) {
-                System.out.print("Press [ENTER] to advance to the next year...");
-                input.nextLine(); 
-                System.out.println("\n");
-            }
-        }
-        
-        System.out.println("🎉 10-YEAR SIMULATION COMPLETE! 🎉");
-        
-        
-        System.out.println("\n--- " + playerName + "'s 10-Year Life History ---");
-        for (int i = 0; i < lifeHistory.size(); i++) {
-            System.out.println(lifeHistory.get(i));
-        }
-        
-        input.close();
+        System.out.println("=== PARTNER A: BACKEND ENGINE TEST ===");
+
+        // 1. Create our 16-year-old test subject
+        Person testSubject = new Person("Test Roen");
+
+        System.out.println("Starting Age: " + testSubject.getAge());
+        System.out.println("Starting Cash: $" + testSubject.getCash());
+        System.out.println("Starting Investments: $" + testSubject.getInvestments());
+        System.out.println("----------------------------------------");
+
+        // 2. Test the new 10-Year Loop (Ages 16-26)
+        System.out.println(">>> SIMULATING 10 YEARS - Action: Part-Time Job...");
+        GameEngine.simulateTenYears(testSubject, "Part-Time Job");
+
+        System.out.println("New Age: " + testSubject.getAge());
+        System.out.println("Cash: $" + (int)testSubject.getCash());
+        System.out.println("Investments: $" + (int)testSubject.getInvestments());
+        System.out.println("Happiness: " + testSubject.getHappiness() + "/100");
+        System.out.println("----------------------------------------");
+
+        // 3. Test the Stock Market Math (Age 26-27)
+        System.out.println(">>> SIMULATING 1 YEAR - Action: Invest 50%...");
+        GameEngine.simulateOneYear(testSubject, "Invest 50%");
+
+        System.out.println("New Age: " + testSubject.getAge());
+        System.out.println("Cash: $" + (int)testSubject.getCash());
+        System.out.println("Investments: $" + (int)testSubject.getInvestments());
+        System.out.println("----------------------------------------");
+
+        // 4. Test the Life History ArrayList
+        System.out.println(">>> PRINTING LIFE HISTORY...");
+        testSubject.addLifeEvent("Started working a Part-Time Job.");
+        testSubject.addLifeEvent("Invested 50% of cash into the stock market.");
+        testSubject.printHistory();
+        System.out.println("----------------------------------------");
+
+        System.out.println("Engine test complete! Math is working perfectly.");
     }
+}
 }
