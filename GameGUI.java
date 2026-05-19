@@ -1,459 +1,602 @@
 import javax.swing.*;
+import javax.swing.border.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
- 
+import java.awt.event.*;
+import java.util.ArrayList;
+
 /**
- * GameGUI.java
- * ============
- * Frontend skeleton for the 50-Year Life & Finance Simulator.
+ * GameGUI.java  —  Frontend for the 50-Year Life & Finance Simulator
+ * ==================================================================
+ * Author  : Partner B (Frontend / Graphics)
+ * Backend : Partner A  →  Person.java, Budget.java, LifeEvent.java,
+ *                         GameEngine.java, Main.java
  *
- * Author:  Partner B (Frontend / Graphics)
- * Partner: Partner A (Backend — BackendLogic.java)
+ * WIRING CONTRACT (all calls reference Partner A's EXACT class/method names):
+ * ┌─────────────────────────────────────────────────────────────────────┐
+ * │  Person      → getName(), getAge(), getCash(), getInvestments(),    │
+ * │                getNetWorth(), getHappiness()                        │
+ * │  Budget      → getTotalMonthlyExpenses(), calculateAnnualSavings()  │
+ * │  LifeEvent   → generateRandomEvent(), getEventName(),               │
+ * │                getFinancialImpact()                                  │
+ * │  GameEngine  → simulateOneYear(Person, String)                      │
+ * │                simulateTenYears(Person, String)                     │
+ * └─────────────────────────────────────────────────────────────────────┘
  *
- * HANDSHAKE CONTRACT:
- *   All backend calls are stubbed as static method calls on BackendLogic.
- *   Partner A must implement a class named BackendLogic with (at minimum):
- *     - static void simulateYears(int years)
- *     - static void getPartTimeJob()
- *     - static void saveMoneyToAccount()
- *     - static void startCareer()
- *     - static void payStudentLoans()
- *     - static void investMoney()
- *     - static void buyHouse()
- *     - static void haveKids()
- *     - static void maxRetirementFund()
- *   Each method should update the shared game state, then Partner B will
- *   call refreshStats() after every action to re-sync the UI labels.
+ * LAYOUT (BorderLayout):
+ *   NORTH  → Stats bar  : Name | Age | Cash | Investments | Net Worth | Happiness
+ *   CENTER → Action panel: age-gated buttons (rebuilt by updateActionPanel)
+ *   SOUTH  → Time controls: Simulate 1 Year | Simulate 10 Years
  *
- * IMAGE ASSETS:
- *   Drop PNG files into the /assets/ folder next to the compiled .class files.
- *   File names expected:
- *     assets/job.png          — part-time job / career button
- *     assets/save.png         — save money button
- *     assets/loans.png        — pay student loans button
- *     assets/invest.png       — invest button
- *     assets/house.png        — buy house button
- *     assets/kids.png         — have kids button
- *     assets/retirement.png   — max retirement fund button
- *     assets/sim1.png         — simulate 1 year button
- *     assets/sim10.png        — simulate 10 years button
- *   If an asset file is missing, the button falls back to text-only gracefully.
+ * IMAGE ASSETS  (drop into  assets/  folder next to .class files):
+ *   assets/job.png         assets/save.png      assets/loans.png
+ *   assets/invest.png      assets/house.png      assets/kids.png
+ *   assets/retirement.png  assets/sim1.png       assets/sim10.png
+ *   assets/vacation.png    assets/career.png
+ *   Missing files fall back to text-only buttons — no crash.
  */
 public class GameGUI extends JFrame {
- 
-    // -------------------------------------------------------------------------
-    // CONSTANTS — tweak freely without touching the layout code
-    // -------------------------------------------------------------------------
-    private static final String WINDOW_TITLE  = "Life & Finance Simulator";
-    private static final int    WINDOW_WIDTH  = 900;
-    private static final int    WINDOW_HEIGHT = 600;
-    private static final String ASSET_PATH    = "assets/"; // relative to working dir
- 
-    // -------------------------------------------------------------------------
-    // STATS PANEL — labels updated by refreshStats()
-    // -------------------------------------------------------------------------
-    private JLabel labelName;
-    private JLabel labelAge;
-    private JLabel labelNetWorth;
- 
-    // -------------------------------------------------------------------------
-    // DYNAMIC ACTION PANEL — rebuilt by updateActionPanel(int age)
-    // -------------------------------------------------------------------------
+
+    // ── Window constants ────────────────────────────────────────────────────
+    private static final String TITLE        = "LifeFinance Simulator";
+    private static final int    WIN_W        = 960;
+    private static final int    WIN_H        = 620;
+    private static final String ASSET_PATH   = "assets/";
+
+    // ── Color palette ───────────────────────────────────────────────────────
+    private static final Color BG_DARK       = new Color(15,  17,  26);
+    private static final Color BG_MID        = new Color(24,  28,  45);
+    private static final Color BG_PANEL      = new Color(32,  38,  60);
+    private static final Color ACCENT_GOLD   = new Color(255, 196, 0);
+    private static final Color ACCENT_TEAL   = new Color(0,   210, 190);
+    private static final Color ACCENT_ROSE   = new Color(255,  80, 110);
+    private static final Color TEXT_LIGHT    = new Color(220, 225, 245);
+    private static final Color TEXT_DIM      = new Color(130, 140, 170);
+
+    // ── Backend objects ──────────────────────────────────────────────────────
+    /**
+     * The single Person object that lives for the whole session.
+     * Uses Person(String name) → age=16, cash=1000, happiness=100.
+     */
+    private Person player;
+
+    /**
+     * Fixed budget matching Main.java defaults.
+     * Uses Budget(double rent, double food, double transport, double entertainment).
+     */
+    private Budget playerBudget = new Budget(1200.0, 400.0, 300.0, 200.0);
+
+    /** Mirrors Main.java's lifeHistory ArrayList. */
+    private ArrayList<String> lifeHistory = new ArrayList<>();
+
+    /**
+     * Action string queued by the player's button click.
+     * Passed into GameEngine.simulateOneYear(player, pendingAction).
+     * Strings must match the switch cases in GameEngine.processAction():
+     *   "Part-Time Job" | "Start Career" | "Invest 50%" | "Vacation"
+     * NOTE: "Pay Student Loans", "Buy House", "Have Kids", "Max Retirement Fund"
+     *       are stubs — Partner A adds those cases to GameEngine when ready.
+     */
+    private String pendingAction = "Part-Time Job";
+
+    // ── UI components ────────────────────────────────────────────────────────
+    private JLabel lblName, lblAge, lblCash, lblInvestments, lblNetWorth, lblHappiness;
     private JPanel actionPanel;
- 
-    // -------------------------------------------------------------------------
-    // LOCAL MIRROR of shared state
-    //   Partner A owns the canonical values inside BackendLogic / game model.
-    //   These are kept here ONLY so the GUI can display them without a
-    //   round-trip call.  Call refreshStats() after every backend mutation.
-    // -------------------------------------------------------------------------
-    private String playerName  = "Player";   // replace with BackendLogic getter
-    private int    playerAge   = 16;          // starting age
-    private double playerNetWorth = 0.0;      // starting net worth
- 
- 
+    private JTextArea eventLog;
+
+
     // =========================================================================
     //  CONSTRUCTOR
     // =========================================================================
-    public GameGUI(String playerName) {
-        this.playerName = playerName;
- 
-        setTitle(WINDOW_TITLE);
-        setSize(WINDOW_WIDTH, WINDOW_HEIGHT);
+    public GameGUI() {
+        String name = JOptionPane.showInputDialog(
+            null, "Enter your character's name:", "New Game", JOptionPane.PLAIN_MESSAGE);
+        if (name == null || name.isBlank()) name = "Player";
+
+        // Person(String name) — starts at age 16 with $1,000 cash
+        player = new Person(name);
+
+        setTitle(TITLE + "  —  " + player.getName());
+        setSize(WIN_W, WIN_H);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLocationRelativeTo(null); // center on screen
- 
+        setLocationRelativeTo(null);
+        getContentPane().setBackground(BG_DARK);
+
         buildFrame();
- 
-        // Populate action buttons for the initial age
-        updateActionPanel(playerAge);
- 
+        updateActionPanel(player.getAge());
+        refreshStats();
+
         setVisible(true);
     }
- 
- 
+
+
     // =========================================================================
-    //  FRAME ASSEMBLY  (BorderLayout skeleton)
+    //  FRAME ASSEMBLY  (BorderLayout)
     // =========================================================================
- 
-    /**
-     * Assembles the three permanent regions: NORTH stats bar, CENTER dynamic
-     * action panel, SOUTH time-control panel.
-     */
     private void buildFrame() {
-        setLayout(new BorderLayout(10, 10));
- 
+        setLayout(new BorderLayout(0, 0));
         add(buildStatsPanel(),       BorderLayout.NORTH);
-        add(buildActionPanelShell(), BorderLayout.CENTER);
+        add(buildCenterSplit(),      BorderLayout.CENTER);
         add(buildTimeControlPanel(), BorderLayout.SOUTH);
     }
- 
- 
+
+    /** CENTER: action panel (left) + event log sidebar (right). */
+    private JSplitPane buildCenterSplit() {
+        actionPanel = new JPanel(new GridBagLayout());
+        actionPanel.setBackground(BG_MID);
+
+        eventLog = new JTextArea("── Event Log ──\n");
+        eventLog.setEditable(false);
+        eventLog.setBackground(new Color(12, 14, 22));
+        eventLog.setForeground(TEXT_DIM);
+        eventLog.setFont(new Font("Monospaced", Font.PLAIN, 12));
+        eventLog.setMargin(new Insets(10, 10, 10, 10));
+
+        JScrollPane scroll = new JScrollPane(eventLog);
+        scroll.setBorder(BorderFactory.createEmptyBorder());
+        scroll.getViewport().setBackground(new Color(12, 14, 22));
+
+        JPanel logPanel = new JPanel(new BorderLayout());
+        logPanel.setBackground(new Color(12, 14, 22));
+        JLabel logTitle = new JLabel("  Life Events", SwingConstants.LEFT);
+        logTitle.setFont(new Font("Serif", Font.BOLD | Font.ITALIC, 13));
+        logTitle.setForeground(ACCENT_GOLD);
+        logTitle.setBorder(new EmptyBorder(8, 8, 8, 8));
+        logPanel.add(logTitle, BorderLayout.NORTH);
+        logPanel.add(scroll,   BorderLayout.CENTER);
+
+        JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, actionPanel, logPanel);
+        split.setDividerLocation(680);
+        split.setDividerSize(3);
+        split.setBorder(BorderFactory.createEmptyBorder());
+        return split;
+    }
+
+
     // =========================================================================
     //  NORTH — Stats Panel
     // =========================================================================
- 
-    /**
-     * Builds the permanent top bar displaying Name, Age, and Net Worth.
-     * Call refreshStats() any time the backend mutates those values.
-     */
     private JPanel buildStatsPanel() {
-        JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 20, 8));
-        panel.setBorder(BorderFactory.createTitledBorder("Player Stats"));
-        panel.setBackground(new Color(30, 30, 50));
- 
-        labelName     = makeStatLabel("Name: "      + playerName);
-        labelAge      = makeStatLabel("Age: "       + playerAge);
-        labelNetWorth = makeStatLabel("Net Worth: $" + String.format("%.2f", playerNetWorth));
- 
-        panel.add(labelName);
-        panel.add(new JSeparator(SwingConstants.VERTICAL));
-        panel.add(labelAge);
-        panel.add(new JSeparator(SwingConstants.VERTICAL));
-        panel.add(labelNetWorth);
- 
-        return panel;
+        JPanel outer = new JPanel(new BorderLayout());
+        outer.setBackground(BG_DARK);
+        outer.setBorder(new MatteBorder(0, 0, 2, 0, ACCENT_GOLD));
+
+        JPanel inner = new JPanel(new FlowLayout(FlowLayout.LEFT, 22, 10));
+        inner.setBackground(BG_DARK);
+
+        lblName        = statLabel("──");
+        lblAge         = statLabel("──");
+        lblCash        = statLabel("──");
+        lblInvestments = statLabel("──");
+        lblNetWorth    = statLabel("──");
+        lblHappiness   = statLabel("──");
+
+        inner.add(captionBlock("PLAYER",    lblName));
+        inner.add(vDivider());
+        inner.add(captionBlock("AGE",       lblAge));
+        inner.add(vDivider());
+        inner.add(captionBlock("CASH",      lblCash));
+        inner.add(vDivider());
+        inner.add(captionBlock("INVESTED",  lblInvestments));
+        inner.add(vDivider());
+        inner.add(captionBlock("NET WORTH", lblNetWorth));
+        inner.add(vDivider());
+        inner.add(captionBlock("HAPPINESS", lblHappiness));
+
+        outer.add(inner, BorderLayout.CENTER);
+        return outer;
     }
- 
-    /** Convenience factory for a styled stats label. */
-    private JLabel makeStatLabel(String text) {
-        JLabel label = new JLabel(text);
-        label.setForeground(Color.WHITE);
-        label.setFont(new Font("Monospaced", Font.BOLD, 16));
-        return label;
+
+    private JLabel statLabel(String t) {
+        JLabel l = new JLabel(t);
+        l.setFont(new Font("Monospaced", Font.BOLD, 15));
+        l.setForeground(TEXT_LIGHT);
+        return l;
     }
- 
- 
-    // =========================================================================
-    //  CENTER — Dynamic Action Panel shell
-    // =========================================================================
- 
-    /**
-     * Creates the empty container that updateActionPanel() will populate.
-     * Using a shell here keeps the BorderLayout stable across rebuilds.
-     */
-    private JPanel buildActionPanelShell() {
-        actionPanel = new JPanel(new GridBagLayout()); // GridBagLayout centers content nicely
-        actionPanel.setBorder(BorderFactory.createTitledBorder("Actions"));
-        actionPanel.setBackground(new Color(20, 20, 40));
-        return actionPanel;
+
+    private JPanel captionBlock(String caption, JLabel val) {
+        JPanel p = new JPanel();
+        p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
+        p.setOpaque(false);
+        JLabel cap = new JLabel(caption);
+        cap.setFont(new Font("SansSerif", Font.PLAIN, 9));
+        cap.setForeground(TEXT_DIM);
+        cap.setAlignmentX(Component.LEFT_ALIGNMENT);
+        val.setAlignmentX(Component.LEFT_ALIGNMENT);
+        p.add(cap); p.add(val);
+        return p;
     }
- 
- 
+
+    private JSeparator vDivider() {
+        JSeparator s = new JSeparator(SwingConstants.VERTICAL);
+        s.setPreferredSize(new Dimension(1, 40));
+        s.setForeground(new Color(50, 55, 80));
+        return s;
+    }
+
+
     // =========================================================================
     //  SOUTH — Time Control Panel
     // =========================================================================
- 
-    /**
-     * Two permanent simulation buttons that are always visible regardless of age.
-     */
     private JPanel buildTimeControlPanel() {
-        JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 10));
-        panel.setBorder(BorderFactory.createTitledBorder("Time Controls"));
-        panel.setBackground(new Color(30, 30, 50));
- 
-        JButton btnSim1  = makeIconButton("Simulate 1 Year",  "sim1.png",  new Color(60, 120, 60));
-        JButton btnSim10 = makeIconButton("Simulate 10 Years","sim10.png", new Color(60, 80, 140));
- 
-        // --- Simulate 1 Year ---
-        btnSim1.addActionListener(e -> {
-            // TODO Partner A: implement BackendLogic.simulateYears(1)
-            BackendLogic.simulateYears(1);
-            playerAge++;
+        JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 24, 12));
+        panel.setBackground(BG_DARK);
+        panel.setBorder(new MatteBorder(2, 0, 0, 0, new Color(40, 45, 70)));
+
+        JButton btn1  = timeButton("▶  Simulate 1 Year",   "sim1.png",  ACCENT_TEAL);
+        JButton btn10 = timeButton("▶▶ Simulate 10 Years", "sim10.png", ACCENT_GOLD);
+
+        // ── Simulate 1 Year ──────────────────────────────────────────────────
+        btn1.addActionListener(e -> {
+            // Roll a random life event via LifeEvent.generateRandomEvent()
+            LifeEvent event = LifeEvent.generateRandomEvent();
+
+            // Log it using LifeEvent.getEventName() and getFinancialImpact()
+            String logLine = "Age " + player.getAge() + ": "
+                    + event.getEventName()
+                    + "  ($" + String.format("%+.0f", event.getFinancialImpact()) + ")";
+            appendLog(logLine);
+            lifeHistory.add("Age " + player.getAge() + ": " + event.getEventName());
+
+            // Apply the one-off financial impact directly to cash
+            player.addCash(event.getFinancialImpact());
+
+            // Delegate the full year simulation to Partner A's GameEngine:
+            //   - processAction(player, pendingAction)  ← queued by action button
+            //   - applyCompoundInterest(player)         ← 4% on cash
+            //   - simulateMarketYear(player)            ← Gaussian stock model
+            //   - player.addAge(1)
+            GameEngine.simulateOneYear(player, pendingAction);
+
             refreshStats();
-            updateActionPanel(playerAge);
+            updateActionPanel(player.getAge());
+            checkGameOver();
         });
- 
-        // --- Simulate 10 Years ---
-        btnSim10.addActionListener(e -> {
-            // TODO Partner A: implement BackendLogic.simulateYears(10)
-            BackendLogic.simulateYears(10);
-            playerAge += 10;
+
+        // ── Simulate 10 Years ────────────────────────────────────────────────
+        btn10.addActionListener(e -> {
+            for (int i = 0; i < 10; i++) {
+                LifeEvent event = LifeEvent.generateRandomEvent();
+                String logLine = "Age " + player.getAge() + ": "
+                        + event.getEventName()
+                        + "  ($" + String.format("%+.0f", event.getFinancialImpact()) + ")";
+                appendLog(logLine);
+                lifeHistory.add("Age " + player.getAge() + ": " + event.getEventName());
+                player.addCash(event.getFinancialImpact());
+
+                // GameEngine.simulateOneYear handles interest + market + age each loop
+                GameEngine.simulateOneYear(player, pendingAction);
+            }
             refreshStats();
-            updateActionPanel(playerAge);
+            updateActionPanel(player.getAge());
+            checkGameOver();
         });
- 
-        panel.add(btnSim1);
-        panel.add(btnSim10);
- 
+
+        panel.add(btn1);
+        panel.add(btn10);
         return panel;
     }
- 
- 
+
+
     // =========================================================================
-    //  DYNAMIC ACTION PANEL  — age-gated button logic
+    //  CENTER — Dynamic Action Panel  (age-gated, rebuilds on each simulate)
     // =========================================================================
- 
+
     /**
-     * Clears and rebuilds the CENTER action panel based on the player's
-     * current age.  Call this after every year simulation.
+     * Clears and rebuilds the CENTER action panel for the given age.
      *
-     * Age ranges:
-     *   16–21  → teen / young adult  (part-time job, save)
-     *   22–29  → young professional  (career, student loans, invest)
-     *   30–50  → mid-life            (house, kids, invest)
-     *   51+    → pre-retirement      (max retirement fund)
+     * Age gates and their pending action strings
+     * (must match GameEngine.processAction() switch cases):
      *
-     * @param age  The player's current age.
+     *   16–21 → "Part-Time Job"       (GameEngine ✓)
+     *           "Save"                (TODO Partner A: add case)
+     *   22–29 → "Start Career"        (GameEngine ✓)
+     *           "Pay Student Loans"   (TODO Partner A: add case)
+     *           "Invest 50%"          (GameEngine ✓)
+     *   30–50 → "Buy House"           (TODO Partner A: add case)
+     *           "Have Kids"           (TODO Partner A: add case)
+     *           "Invest 50%"          (GameEngine ✓)
+     *           "Vacation"            (GameEngine ✓)
+     *   51+   → "Max Retirement Fund" (TODO Partner A: add case)
+     *
+     * @param age  Current age from Person.getAge()
      */
     public void updateActionPanel(int age) {
-        // --- Wipe existing buttons ---
         actionPanel.removeAll();
- 
-        JPanel buttonRow = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 15));
+
+        JPanel container = new JPanel();
+        container.setLayout(new BoxLayout(container, BoxLayout.Y_AXIS));
+        container.setOpaque(false);
+
+        // Life-stage header
+        JLabel stageLabel = new JLabel(getLifeStageName(age), SwingConstants.CENTER);
+        stageLabel.setFont(new Font("Serif", Font.BOLD | Font.ITALIC, 18));
+        stageLabel.setForeground(ACCENT_GOLD);
+        stageLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        stageLabel.setBorder(new EmptyBorder(18, 0, 4, 0));
+        container.add(stageLabel);
+
+        JLabel hint = new JLabel("Select an action, then hit Simulate →", SwingConstants.CENTER);
+        hint.setFont(new Font("SansSerif", Font.PLAIN, 12));
+        hint.setForeground(TEXT_DIM);
+        hint.setAlignmentX(Component.CENTER_ALIGNMENT);
+        hint.setBorder(new EmptyBorder(0, 0, 16, 0));
+        container.add(hint);
+
+        JPanel buttonRow = new JPanel(new FlowLayout(FlowLayout.CENTER, 14, 8));
         buttonRow.setOpaque(false);
- 
+
         if (age >= 16 && age <= 21) {
-            // ---- TEEN / YOUNG ADULT ----------------------------------------
-            JButton btnJob  = makeIconButton("Get Part-Time Job", "job.png",  new Color(180, 120, 30));
-            JButton btnSave = makeIconButton("Save",              "save.png", new Color(30, 140, 100));
- 
+            // ── Teen / Young Adult ───────────────────────────────────────────
+            JButton btnJob  = actionButton("Get Part-Time Job", "job.png",  new Color(220, 150, 30));
+            JButton btnSave = actionButton("Save",              "save.png", new Color(30, 160, 100));
+
             btnJob.addActionListener(e -> {
-                // TODO Partner A: implement BackendLogic.getPartTimeJob()
-                BackendLogic.getPartTimeJob();
-                refreshStats();
+                pendingAction = "Part-Time Job"; // GameEngine.processAction() case
+                highlightSelected(buttonRow, btnJob);
+                appendLog("→ Action queued: Part-Time Job (+$5,000, happiness -5)");
             });
- 
             btnSave.addActionListener(e -> {
-                // TODO Partner A: implement BackendLogic.saveMoneyToAccount()
-                BackendLogic.saveMoneyToAccount();
-                refreshStats();
+                pendingAction = "Save"; // TODO Partner A: add "Save" case to GameEngine
+                highlightSelected(buttonRow, btnSave);
+                appendLog("→ Action queued: Save");
             });
- 
+
             buttonRow.add(btnJob);
             buttonRow.add(btnSave);
- 
+
         } else if (age >= 22 && age <= 29) {
-            // ---- YOUNG PROFESSIONAL ----------------------------------------
-            JButton btnCareer = makeIconButton("Start Career",       "job.png",   new Color(30, 100, 180));
-            JButton btnLoans  = makeIconButton("Pay Student Loans",  "loans.png", new Color(180, 60, 60));
-            JButton btnInvest = makeIconButton("Invest",             "invest.png",new Color(30, 160, 80));
- 
+            // ── Young Professional ───────────────────────────────────────────
+            JButton btnCareer = actionButton("Start Career",      "career.png", new Color(30,  120, 210));
+            JButton btnLoans  = actionButton("Pay Student Loans", "loans.png",  new Color(200,  70,  70));
+            JButton btnInvest = actionButton("Invest 50%",        "invest.png", new Color(30,  180,  90));
+
             btnCareer.addActionListener(e -> {
-                // TODO Partner A: implement BackendLogic.startCareer()
-                BackendLogic.startCareer();
-                refreshStats();
+                pendingAction = "Start Career"; // GameEngine case: +$50,000, happiness -10
+                highlightSelected(buttonRow, btnCareer);
+                appendLog("→ Action queued: Start Career (+$50,000, happiness -10)");
             });
- 
             btnLoans.addActionListener(e -> {
-                // TODO Partner A: implement BackendLogic.payStudentLoans()
-                BackendLogic.payStudentLoans();
-                refreshStats();
+                pendingAction = "Pay Student Loans"; // TODO Partner A: add case
+                highlightSelected(buttonRow, btnLoans);
+                appendLog("→ Action queued: Pay Student Loans");
             });
- 
             btnInvest.addActionListener(e -> {
-                // TODO Partner A: implement BackendLogic.investMoney()
-                BackendLogic.investMoney();
-                refreshStats();
+                pendingAction = "Invest 50%"; // GameEngine case: moves 50% cash → investments
+                highlightSelected(buttonRow, btnInvest);
+                appendLog("→ Action queued: Invest 50% of cash");
             });
- 
+
             buttonRow.add(btnCareer);
             buttonRow.add(btnLoans);
             buttonRow.add(btnInvest);
- 
+
         } else if (age >= 30 && age <= 50) {
-            // ---- MID-LIFE --------------------------------------------------
-            JButton btnHouse  = makeIconButton("Buy House",  "house.png",  new Color(140, 80, 20));
-            JButton btnKids   = makeIconButton("Have Kids",  "kids.png",   new Color(180, 60, 120));
-            JButton btnInvest = makeIconButton("Invest",     "invest.png", new Color(30, 160, 80));
- 
+            // ── Mid-Life ─────────────────────────────────────────────────────
+            JButton btnHouse  = actionButton("Buy House",   "house.png",    new Color(160,  90,  20));
+            JButton btnKids   = actionButton("Have Kids",   "kids.png",     new Color(200,  60, 130));
+            JButton btnInvest = actionButton("Invest 50%",  "invest.png",   new Color(30,  180,  90));
+            JButton btnVacay  = actionButton("Vacation",    "vacation.png", new Color(70,  130, 200));
+
             btnHouse.addActionListener(e -> {
-                // TODO Partner A: implement BackendLogic.buyHouse()
-                BackendLogic.buyHouse();
-                refreshStats();
+                pendingAction = "Buy House"; // TODO Partner A: add case
+                highlightSelected(buttonRow, btnHouse);
+                appendLog("→ Action queued: Buy House");
             });
- 
             btnKids.addActionListener(e -> {
-                // TODO Partner A: implement BackendLogic.haveKids()
-                BackendLogic.haveKids();
-                refreshStats();
+                pendingAction = "Have Kids"; // TODO Partner A: add case
+                highlightSelected(buttonRow, btnKids);
+                appendLog("→ Action queued: Have Kids");
             });
- 
             btnInvest.addActionListener(e -> {
-                // TODO Partner A: implement BackendLogic.investMoney()
-                BackendLogic.investMoney();
-                refreshStats();
+                pendingAction = "Invest 50%"; // GameEngine case ✓
+                highlightSelected(buttonRow, btnInvest);
+                appendLog("→ Action queued: Invest 50% of cash");
             });
- 
+            btnVacay.addActionListener(e -> {
+                pendingAction = "Vacation"; // GameEngine case: -$3,000, happiness +20
+                highlightSelected(buttonRow, btnVacay);
+                appendLog("→ Action queued: Vacation (-$3,000, happiness +20)");
+            });
+
             buttonRow.add(btnHouse);
             buttonRow.add(btnKids);
             buttonRow.add(btnInvest);
- 
+            buttonRow.add(btnVacay);
+
         } else {
-            // ---- PRE-RETIREMENT (age > 50) ---------------------------------
-            JButton btnRetire = makeIconButton("Max Retirement Fund", "retirement.png", new Color(100, 60, 180));
- 
+            // ── Pre-Retirement (age > 50) ────────────────────────────────────
+            JButton btnRetire = actionButton("Max Retirement Fund", "retirement.png",
+                                             new Color(120, 60, 200));
+
             btnRetire.addActionListener(e -> {
-                // TODO Partner A: implement BackendLogic.maxRetirementFund()
-                BackendLogic.maxRetirementFund();
-                refreshStats();
+                pendingAction = "Max Retirement Fund"; // TODO Partner A: add case
+                highlightSelected(buttonRow, btnRetire);
+                appendLog("→ Action queued: Max Retirement Fund");
             });
- 
+
             buttonRow.add(btnRetire);
         }
- 
-        // Add an age-range label above the buttons for clarity
-        JLabel ageLabel = new JLabel(getLifeStageName(age), SwingConstants.CENTER);
-        ageLabel.setForeground(new Color(180, 180, 220));
-        ageLabel.setFont(new Font("Serif", Font.ITALIC, 14));
- 
+
+        container.add(buttonRow);
+        container.add(buildBudgetStrip()); // uses Budget.getTotalMonthlyExpenses()
+
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.gridx = 0; gbc.gridy = 0; gbc.insets = new Insets(10,0,4,0);
-        actionPanel.add(ageLabel, gbc);
- 
-        gbc.gridy = 1;
-        actionPanel.add(buttonRow, gbc);
- 
-        // --- Commit the rebuild ---
+        gbc.gridx = 0; gbc.gridy = 0;
+        gbc.fill = GridBagConstraints.BOTH;
+        gbc.weightx = 1.0; gbc.weighty = 1.0;
+        actionPanel.add(container, gbc);
+
         actionPanel.revalidate();
         actionPanel.repaint();
     }
- 
-    /** Maps an age to a human-readable life-stage string for the panel header. */
-    private String getLifeStageName(int age) {
-        if      (age <= 21) return "Life Stage: Teen / Young Adult";
-        else if (age <= 29) return "Life Stage: Young Professional";
-        else if (age <= 50) return "Life Stage: Mid-Life";
-        else                return "Life Stage: Pre-Retirement";
+
+    /** Info strip at the bottom of the action panel — reads from Budget object. */
+    private JPanel buildBudgetStrip() {
+        JPanel strip = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 6));
+        strip.setOpaque(false);
+        strip.setBorder(new MatteBorder(1, 0, 0, 0, new Color(40, 45, 70)));
+
+        // Budget.getTotalMonthlyExpenses()  →  rent+food+transport+entertainment
+        double monthly = playerBudget.getTotalMonthlyExpenses();
+        // Budget.calculateAnnualSavings(yearlyIncome) = yearlyIncome - (monthly * 12)
+        // TODO: replace 50000.0 with a real income getter if Partner A adds one to Person
+        double annualSavings = playerBudget.calculateAnnualSavings(50000.0);
+
+        JLabel mo = new JLabel("Monthly Expenses: $" + String.format("%.0f", monthly));
+        JLabel sa = new JLabel("Est. Annual Savings: $" + String.format("%.0f", annualSavings));
+        mo.setFont(new Font("Monospaced", Font.PLAIN, 11));
+        sa.setFont(new Font("Monospaced", Font.PLAIN, 11));
+        mo.setForeground(TEXT_DIM);
+        sa.setForeground(new Color(100, 210, 140));
+
+        strip.add(mo);
+        strip.add(sa);
+        return strip;
     }
- 
- 
+
+
     // =========================================================================
-    //  STATS REFRESH
+    //  STATS REFRESH — reads from Person getters
     // =========================================================================
- 
+
     /**
-     * Re-syncs the NORTH stats bar with the current game state.
+     * Syncs NORTH stats bar with the live Person object.
+     * Call this after every GameEngine mutation.
      *
-     * TODO: Replace the local field reads with calls to Partner A's getters, e.g.:
-     *   playerAge      = BackendLogic.getPlayerAge();
-     *   playerNetWorth = BackendLogic.getPlayerNetWorth();
-     *   playerName     = BackendLogic.getPlayerName();
+     * Reads: getName(), getAge(), getCash(), getInvestments(),
+     *        getNetWorth(), getHappiness()
      */
     public void refreshStats() {
-        // TODO: pull live values from BackendLogic once Partner A's getters exist
-        // playerAge      = BackendLogic.getPlayerAge();
-        // playerNetWorth = BackendLogic.getPlayerNetWorth();
- 
-        labelName    .setText("Name: "       + playerName);
-        labelAge     .setText("Age: "        + playerAge);
-        labelNetWorth.setText("Net Worth: $" + String.format("%.2f", playerNetWorth));
+        lblName       .setText(player.getName());
+        lblAge        .setText(player.getAge()   + " yrs");
+        lblCash       .setText("$" + String.format("%,.0f", player.getCash()));
+        lblInvestments.setText("$" + String.format("%,.0f", player.getInvestments()));
+        lblNetWorth   .setText("$" + String.format("%,.0f", player.getNetWorth()));
+
+        // Person.getHappiness() is clamped 0–100 by modifyHappiness()
+        int h = player.getHappiness();
+        lblHappiness.setText(h + " / 100");
+        lblHappiness.setForeground(h >= 70 ? new Color(80, 220, 120)
+                                 : h >= 40 ? ACCENT_GOLD : ACCENT_ROSE);
+
+        lblNetWorth.setForeground(player.getNetWorth() >= 0
+                ? new Color(80, 220, 120) : ACCENT_ROSE);
     }
- 
- 
+
+
     // =========================================================================
-    //  UTILITY — Icon Button Factory
+    //  GAME OVER
     // =========================================================================
- 
-    /**
-     * Creates a styled JButton with an optional ImageIcon loaded from ASSET_PATH.
-     * If the image file does not exist, the button falls back to text-only gracefully.
-     *
-     * @param label      Button label text (always shown as tooltip; shown as text if no icon).
-     * @param imageFile  Filename inside ASSET_PATH, e.g. "invest.png".
-     * @param bgColor    Background colour for the button.
-     * @return           Configured JButton ready to have an ActionListener attached.
-     */
-    private JButton makeIconButton(String label, String imageFile, Color bgColor) {
-        JButton button;
- 
-        ImageIcon icon = loadIcon(imageFile);
-        if (icon != null) {
-            button = new JButton(icon);   // icon-only button
-            button.setToolTipText(label); // text lives in tooltip for icon buttons
-        } else {
-            button = new JButton(label);  // graceful text fallback
+    private void checkGameOver() {
+        if (player.getAge() >= 66) showEndScreen();
+    }
+
+    private void showEndScreen() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("🎉  SIMULATION COMPLETE!\n\n");
+        sb.append("Final Report — ").append(player.getName()).append("\n");
+        sb.append("  Age       : ").append(player.getAge()).append("\n");
+        sb.append("  Cash      : $").append(String.format("%,.2f", player.getCash())).append("\n");
+        sb.append("  Invested  : $").append(String.format("%,.2f", player.getInvestments())).append("\n");
+        sb.append("  Net Worth : $").append(String.format("%,.2f", player.getNetWorth())).append("\n");
+        sb.append("  Happiness : ").append(player.getHappiness()).append(" / 100\n\n");
+        sb.append("── Life History ──\n");
+        for (String entry : lifeHistory) sb.append("  ").append(entry).append("\n");
+
+        JTextArea area = new JTextArea(sb.toString());
+        area.setEditable(false);
+        area.setFont(new Font("Monospaced", Font.PLAIN, 13));
+        JScrollPane sp = new JScrollPane(area);
+        sp.setPreferredSize(new Dimension(480, 360));
+        JOptionPane.showMessageDialog(this, sp, "Game Over — Final Report",
+                JOptionPane.INFORMATION_MESSAGE);
+    }
+
+
+    // =========================================================================
+    //  HELPERS
+    // =========================================================================
+    private void appendLog(String line) {
+        eventLog.append(line + "\n");
+        eventLog.setCaretPosition(eventLog.getDocument().getLength());
+    }
+
+    private void highlightSelected(JPanel row, JButton selected) {
+        for (Component c : row.getComponents()) {
+            if (c instanceof JButton btn) {
+                btn.setBorder(BorderFactory.createLineBorder(
+                        c == selected ? ACCENT_GOLD : new Color(60, 65, 90), 2));
+            }
         }
- 
-        button.setBackground(bgColor);
-        button.setForeground(Color.WHITE);
-        button.setFont(new Font("SansSerif", Font.BOLD, 13));
-        button.setFocusPainted(false);
-        button.setBorderPainted(true);
-        button.setPreferredSize(new Dimension(160, 60));
-        button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
- 
-        return button;
     }
- 
-    /**
-     * Attempts to load an ImageIcon from ASSET_PATH.
-     * Returns null (no exception thrown) if the file is missing — callers
-     * should always check for null and fall back to text.
-     *
-     * @param filename  e.g. "invest.png"
-     * @return          ImageIcon, or null if not found.
-     */
+
+    private String getLifeStageName(int age) {
+        if      (age <= 21) return "Teen / Young Adult  (16–21)";
+        else if (age <= 29) return "Young Professional  (22–29)";
+        else if (age <= 50) return "Mid-Life            (30–50)";
+        else                return "Pre-Retirement      (51+)";
+    }
+
+    // ── Button factories ──────────────────────────────────────────────────────
+    private JButton actionButton(String label, String img, Color accent) {
+        return buildButton(label, img, accent, 155, 72, new Font("SansSerif", Font.BOLD, 13));
+    }
+    private JButton timeButton(String label, String img, Color accent) {
+        return buildButton(label, img, accent, 210, 44, new Font("SansSerif", Font.BOLD, 14));
+    }
+
+    private JButton buildButton(String label, String imageFile,
+                                Color accent, int w, int h, Font font) {
+        ImageIcon icon = loadIcon(imageFile);
+        JButton btn;
+        if (icon != null) {
+            Image scaled = icon.getImage().getScaledInstance(28, 28, Image.SCALE_SMOOTH);
+            btn = new JButton(label, new ImageIcon(scaled));
+            btn.setHorizontalTextPosition(SwingConstants.CENTER);
+            btn.setVerticalTextPosition(SwingConstants.BOTTOM);
+        } else {
+            btn = new JButton(label);
+        }
+        btn.setPreferredSize(new Dimension(w, h));
+        btn.setBackground(accent.darker().darker());
+        btn.setForeground(TEXT_LIGHT);
+        btn.setFont(font);
+        btn.setFocusPainted(false);
+        btn.setBorder(BorderFactory.createLineBorder(accent.darker(), 1));
+        btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+
+        Color hoverBg  = accent.darker();
+        Color normalBg = accent.darker().darker();
+        btn.addMouseListener(new MouseAdapter() {
+            public void mouseEntered(MouseEvent e) {
+                btn.setBackground(hoverBg);
+                btn.setBorder(BorderFactory.createLineBorder(accent, 2));
+            }
+            public void mouseExited(MouseEvent e) {
+                btn.setBackground(normalBg);
+                btn.setBorder(BorderFactory.createLineBorder(accent.darker(), 1));
+            }
+        });
+        return btn;
+    }
+
     private ImageIcon loadIcon(String filename) {
         try {
-            java.net.URL imgURL = getClass().getResource(ASSET_PATH + filename);
-            if (imgURL != null) {
-                return new ImageIcon(imgURL);
-            }
-            // Fallback: try file system path (useful during development)
-            java.io.File imgFile = new java.io.File(ASSET_PATH + filename);
-            if (imgFile.exists()) {
-                return new ImageIcon(imgFile.getAbsolutePath());
-            }
-        } catch (Exception e) {
-            System.err.println("[GameGUI] Warning: could not load icon '" + filename + "' — " + e.getMessage());
+            java.net.URL url = getClass().getResource(ASSET_PATH + filename);
+            if (url != null) return new ImageIcon(url);
+            java.io.File f = new java.io.File(ASSET_PATH + filename);
+            if (f.exists()) return new ImageIcon(f.getAbsolutePath());
+        } catch (Exception ex) {
+            System.err.println("[GameGUI] Missing icon: " + filename);
         }
-        return null; // graceful fallback
+        return null;
     }
- 
- 
-    // =========================================================================
-    //  STUB — BackendLogic placeholder so this file compiles standalone
-    //  DELETE this inner class once Partner A provides BackendLogic.java
-    // =========================================================================
- 
-    /**
-     * TEMPORARY STUB — Partner A replaces this with the real BackendLogic class.
-     *
-     * This inner class exists solely so GameGUI.java compiles and runs by itself
-     * for UI testing.  Once Partner A delivers BackendLogic.java, remove this
-     * entire static inner class and ensure BackendLogic.java is on the classpath.
-     */
-    static class BackendLogic {
-        public static void simulateYears(int years)    { System.out.println("[STUB] simulateYears("    + years + ")"); }
-        public static void getPartTimeJob()             { System.out.println("[STUB] getPartTimeJob()");                }
-        public static void saveMoneyToAccount()         { System.out.println("[STUB] saveMoneyToAccount()");           }
-        public static void startCareer()                { System.out.println("[STUB] startCareer()");                  }
-        public static void payStudentLoans()            { System.out.println("[STUB] payStudentLoans()");              }
-        public static void investMoney()                { System.out.println("[STUB] investMoney()");                  }
-        public static void buyHouse()                   { System.out.println("[STUB] buyHouse()");                     }
-        public static void haveKids()                   { System.out.println("[STUB] haveKids()");                     }
-        public static void maxRetirementFund()          { System.out.println("[STUB] maxRetirementFund()");            }
-        // TODO Partner A: add getPlayerAge(), getPlayerNetWorth(), getPlayerName()
-    }
- 
- 
+
+
     // =========================================================================
     //  ENTRY POINT
     // =========================================================================
     public static void main(String[] args) {
-        // Run on the Event Dispatch Thread as required by Swing
-        SwingUtilities.invokeLater(() -> new GameGUI("Alex"));
+        SwingUtilities.invokeLater(GameGUI::new);
     }
 }
