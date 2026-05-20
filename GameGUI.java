@@ -95,16 +95,15 @@ public class GameGUI extends JFrame {
         JButton btnSim1  = makeIconButton("Simulate 1 Year",  new Color(150, 200, 150));
         JButton btnSim10 = makeIconButton("Simulate 10 Years", new Color(150, 170, 220));
 
-        // Detects string messages from the math loops and fires popup graphics
         btnSim1.addActionListener(e -> {
-            String emergency = GameEngine.simulateOneYear(player);
-            handleTimelineEmergency(emergency);
+            String eventMsg = GameEngine.simulateOneYear(player);
+            handleTimelineEvent(eventMsg);
             refreshAll();
         });
 
         btnSim10.addActionListener(e -> {
-            String emergency = GameEngine.simulateTenYears(player);
-            handleTimelineEmergency(emergency);
+            String eventMsg = GameEngine.simulateTenYears(player);
+            handleTimelineEvent(eventMsg);
             refreshAll();
         });
 
@@ -113,18 +112,26 @@ public class GameGUI extends JFrame {
         return panel;
     }
 
-    private void handleTimelineEmergency(String msg) {
+    // Handles picking icons for BOTH positive and negative events!
+    private void handleTimelineEvent(String msg) {
         if (msg == null) return;
         
-        int row = 0, col = 3; // Defaults to the loans/billing image coordinates
-        if (msg.contains("market") || msg.contains("portfolio")) {
-            row = 1; col = 4; // Changes tile coordinate to stock market graphic
-        } else if (msg.contains("career") || msg.contains("downsizing")) {
-            row = 0; col = 2; // Changes tile coordinate to office career graphic
+        int row = 0, col = 3; // Defaults to billing/cash icon
+        int messageType = JOptionPane.WARNING_MESSAGE;
+
+        if (msg.contains("WINDFALL")) {
+            messageType = JOptionPane.INFORMATION_MESSAGE; // Green/Blue info styling
+            if (msg.contains("bonus")) { row = 0; col = 0; } // Money bag
+            else if (msg.contains("Market") || msg.contains("Portfolio")) { row = 0; col = 4; } // Bull market chart
+            else { row = 0; col = 3; } // Cash refund
+        } else {
+            // It's an emergency
+            if (msg.contains("market") || msg.contains("correction")) { row = 1; col = 4; } 
+            else if (msg.contains("career") || msg.contains("downsizing")) { row = 0; col = 2; } 
         }
 
-        ImageIcon emergencyIcon = sliceIconFromSheet(row, col);
-        JOptionPane.showMessageDialog(this, msg, "CRITICAL LIFE EVENT", JOptionPane.WARNING_MESSAGE, emergencyIcon);
+        ImageIcon icon = sliceIconFromSheet(row, col);
+        JOptionPane.showMessageDialog(this, msg, msg.contains("WINDFALL") ? "GOOD NEWS!" : "CRITICAL ALERT", messageType, icon);
     }
 
     public void updateActionPanel(int age) {
@@ -132,28 +139,39 @@ public class GameGUI extends JFrame {
         JPanel buttonRow = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 15));
         buttonRow.setOpaque(false);
 
-        if (age >= 16 && age <= 21) {
-            JButton btnJob = makeIconButton("Get Part-Time Job", new Color(220, 180, 100));
-            JButton btnPC  = makeIconButton("Buy Gaming PC", new Color(200, 100, 100)); 
+        // --- NEW EMERGENCY OVERRIDE LOGIC ---
+        // If an adult gets laid off, dynamically pop the career option back up instantly!
+        if (age >= 22 && !player.hasCareer()) {
+            JButton btnEmergencyJob = makeIconButton("Apply for New Job", new Color(255, 200, 100));
+            btnEmergencyJob.addActionListener(e -> { triggerAction("Start Career", 0, 2, "Interviews passed! You successfully replaced your career income stream."); });
+            buttonRow.add(btnEmergencyJob);
+        }
 
-            btnJob.addActionListener(e -> { triggerAction("Get Part-Time Job", 0, 0, "You got hired! Time to earn some cash flow."); });
+        // --- STANDARD LIFE STAGE CONTROLS ---
+        if (age >= 16 && age <= 21) {
+            if (!player.hasPartTimeJob()) {
+                JButton btnJob = makeIconButton("Get Part-Time Job", new Color(220, 180, 100));
+                btnJob.addActionListener(e -> { triggerAction("Get Part-Time Job", 0, 0, "You got hired! Time to earn some cash flow."); });
+                buttonRow.add(btnJob);
+            }
+            JButton btnPC  = makeIconButton("Buy Gaming PC", new Color(200, 100, 100)); 
             btnPC.addActionListener(e -> { triggerAction("Buy PC", 0, 1, "Specs are clean! +15 Happiness."); });
-            
-            buttonRow.add(btnJob);
             buttonRow.add(btnPC);
 
         } else if (age >= 22 && age <= 29) {
-            JButton btnCareer  = makeIconButton("Start Career", new Color(130, 180, 220));
+            if (!player.hasCareer()) { // Only show if they haven't clicked it yet
+                JButton btnCareer = makeIconButton("Start Career", new Color(130, 180, 220));
+                btnCareer.addActionListener(e -> { triggerAction("Start Career", 0, 2, "Welcome to adulthood. Salary unlocked!"); });
+                buttonRow.add(btnCareer);
+            }
             JButton btnLoans   = makeIconButton("Pay Loans", new Color(220, 130, 130));
             JButton btnInvest  = makeIconButton("Invest 50%", new Color(130, 200, 150));
             JButton btnJewelry = makeIconButton("Buy Jewelry", new Color(200, 100, 100)); 
 
-            btnCareer.addActionListener(e -> { triggerAction("Start Career", 0, 2, "Welcome to adulthood. Salary unlocked!"); });
             btnLoans.addActionListener(e -> { triggerAction("Pay Student Loans", 0, 3, "Paid a lump sum toward your education debt."); });
             btnInvest.addActionListener(e -> { triggerAction("Invest 50%", 0, 4, "Allocating 50% of your cash into volatile assets."); });
             btnJewelry.addActionListener(e -> { triggerAction("Buy Jewelry", 1, 1, "Drip acquired. +20 Happiness."); });
 
-            buttonRow.add(btnCareer);
             buttonRow.add(btnLoans);
             buttonRow.add(btnInvest);
             buttonRow.add(btnJewelry);
@@ -174,7 +192,7 @@ public class GameGUI extends JFrame {
             buttonRow.add(btnInvest);
             buttonRow.add(btnCar);
 
-        } else {
+        } else if (age >= 51 && age < 65) {
             JButton btnRetire = makeIconButton("Max Retirement", new Color(180, 140, 220));
             JButton btnBoat   = makeIconButton("Buy Boat", new Color(200, 100, 100)); 
             
@@ -206,7 +224,6 @@ public class GameGUI extends JFrame {
         refreshAll();
     }
 
-    // Isolated extraction logic so both button milestones and random timeline drops can share it
     private ImageIcon sliceIconFromSheet(int row, int col) {
         if (masterSheet == null) return null;
         try {

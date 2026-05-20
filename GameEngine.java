@@ -3,13 +3,11 @@ import java.util.Random;
 public class GameEngine {
     private static Random rand = new Random();
 
-    // 1. COMPOUND INTEREST (Safe Savings)
     public static void applyCompoundInterest(Person p) {
         double interest = p.getCash() * 0.04;
         p.addCash(interest);
     }
 
-    // 2. REALISTIC STOCK MARKET (Investments)
     public static void simulateMarketYear(Person p) {
         if (p.getInvestments() > 0) {
             double marketReturn = (rand.nextGaussian() * 0.15) + 0.08; 
@@ -18,82 +16,115 @@ public class GameEngine {
         }
     }
 
-    // 3. THE TIME MACHINE (1-Year Loop) - Now returns emergency message strings
     public static String simulateOneYear(Person p) {
         if (p.getAge() >= 65) return null;
+
         double oldInvest = p.getInvestments();
         boolean oldCareer = p.hasCareer();
 
-        // Apply core cash flow loop
+        // Process annual cash flow
         p.addCash(getAnnualCashFlow(p));
-        
         if (p.hasPartTimeJob()) p.modifyHappiness(-5);
         if (p.hasCareer())      p.modifyHappiness(-10);
 
-        // Process interest and stock returns
         applyCompoundInterest(p);
         simulateMarketYear(p);
         p.addAge(1);
 
-        // RANDOM LIFE EMERGENCIES (15% chance per year once they hit adulthood)
-        if (rand.nextDouble() < 0.15 && p.getAge() >= 22) {
-            int eventType = rand.nextInt(4);
-            switch (eventType) {
-                case 0:
-                    p.addCash(-3000);
-                    p.modifyHappiness(-15);
-                    p.addLifeEvent("EMERGENCY: Medical bill copay after an unexpected injury! (-$3,000)");
-                    return "EMERGENCY: Medical bill copay after an unexpected injury! (-$3,000)";
-                case 1:
-                    p.addCash(-1500);
-                    p.modifyHappiness(-10);
-                    p.addLifeEvent("EMERGENCY: Car transmission failed. Mechanics are expensive! (-$1,500)");
-                    return "EMERGENCY: Car transmission failed. Mechanics are expensive! (-$1,500)";
-                case 2:
-                    if (oldCareer) {
-                        p.setCareer(false); // YOU GOT LAID OFF
-                        p.modifyHappiness(-30);
-                        p.addLifeEvent("EMERGENCY: Corporate downsizing. You lost your career! Income dropped to $0.");
-                        return "EMERGENCY: Corporate downsizing. You lost your career! Income dropped to $0.";
-                    }
-                    break;
-                case 3:
-                    if (oldInvest > 10000) {
-                        double crash = oldInvest * 0.30;
-                        p.addInvestments(-crash);
-                        p.modifyHappiness(-20);
-                        p.addLifeEvent("EMERGENCY: Stock market correction! Your investment portfolio dropped 30%.");
-                        return "EMERGENCY: Stock market correction! Your investment portfolio dropped 30%.";
-                    }
-                    break;
+        // Check if the random layoff triggered during core flow mechanics
+        if (oldCareer && !p.hasCareer()) {
+            return "EMERGENCY: Corporate downsizing! You lost your career. Income dropped to $0.";
+        }
+
+        // --- RANDOM EVENT ENGINE (Adulthood) ---
+        if (p.getAge() >= 22) {
+            double eventRoll = rand.nextDouble();
+            
+            // 15% Chance of an Emergency (Negative)
+            if (eventRoll < 0.15) {
+                int eventType = rand.nextInt(4);
+                switch (eventType) {
+                    case 0:
+                        p.addCash(-3000);
+                        p.modifyHappiness(-15);
+                        p.addLifeEvent("EMERGENCY: Medical bill copay after an unexpected injury! (-$3,000)");
+                        return "EMERGENCY: Medical bill copay after an unexpected injury! (-$3,000)";
+                    case 1:
+                        p.addCash(-1500);
+                        p.modifyHappiness(-10);
+                        p.addLifeEvent("EMERGENCY: Car transmission failed. Mechanics are expensive! (-$1,500)");
+                        return "EMERGENCY: Car transmission failed. Mechanics are expensive! (-$1,500)";
+                    case 2:
+                        if (p.hasCareer()) {
+                            p.setCareer(false); // YOU GOT LAID OFF
+                            p.modifyHappiness(-30);
+                            p.addLifeEvent("EMERGENCY: Corporate downsizing. You lost your career!");
+                            return "EMERGENCY: Corporate downsizing. You lost your career! Income dropped to $0. Look for a new job immediately!";
+                        }
+                        break;
+                    case 3:
+                        if (oldInvest > 10000) {
+                            double crash = oldInvest * 0.30;
+                            p.addInvestments(-crash);
+                            p.modifyHappiness(-20);
+                            p.addLifeEvent("EMERGENCY: Stock market correction! Your investment portfolio dropped 30%.");
+                            return "EMERGENCY: Stock market correction! Your investment portfolio dropped 30%.";
+                        }
+                        break;
+                }
+            } 
+            // 15% Chance of a WINDFALL (Positive!)
+            else if (eventRoll > 0.85) {
+                int windfallType = rand.nextInt(3);
+                switch (windfallType) {
+                    case 0:
+                        if (p.hasCareer()) {
+                            p.addCash(5000);
+                            p.modifyHappiness(20);
+                            p.addLifeEvent("WINDFALL: Crushed your quarterly targets! Received a $5,000 job bonus.");
+                            return "WINDFALL: Excellent performance! Your boss handed you a $5,000 holiday bonus. (+20 Happiness)";
+                        }
+                        break;
+                    case 1:
+                        p.addCash(2000);
+                        p.modifyHappiness(15);
+                        p.addLifeEvent("WINDFALL: Filed your taxes accurately. Received a $2,000 IRS refund.");
+                        return "WINDFALL: Tax season victory! You received a $2,000 government tax refund check.";
+                    case 2:
+                        if (p.getInvestments() > 5000) {
+                            double surge = p.getInvestments() * 0.25;
+                            p.addInvestments(surge);
+                            p.modifyHappiness(25);
+                            p.addLifeEvent("WINDFALL: One of your stock assets went viral! Investments surged 25%.");
+                            return "WINDFALL: Market Rally! One of your index holdings exploded. Portfolio value surged +25%! (+25 Happiness)";
+                        }
+                        break;
+                }
             }
         }
 
-        return null; // Normal year, no emergency
+        return null; 
     }
 
-    // 4. THE TIME MACHINE (10-Year Loop) - Returns the latest emergency encountered, if any
     public static String simulateTenYears(Person p) {
-        String latestEmergency = null;
+        String latestNotification = null;
         for (int i = 0; i < 10; i++) {
             if (p.getAge() >= 65) break;
             String result = simulateOneYear(p);
             if (result != null) {
-                latestEmergency = result; // Remembers the disaster to report to the GUI
+                latestNotification = result; 
             }
         }
-        return latestEmergency;
+        return latestNotification;
     }
 
-    // 5. HELPER: CALCULATE NET CASH FLOW
     public static double getAnnualCashFlow(Person p) {
         double flow = 0;
-        
         if (p.hasPartTimeJob()) flow += 10000; 
         if (p.hasCareer())      flow += 48000; 
 
         if (p.getAge() >= 22) {
-            flow -= 15000; // Mandatory living cost
+            flow -= 15000; 
         } else {
             flow -= 2000;  
         }
@@ -104,7 +135,6 @@ public class GameEngine {
         return flow;
     }
 
-    // 6. INSTANT ACTIONS 
     public static void takeInstantAction(Person p, String action) {
         switch (action) {
             case "Get Part-Time Job":
