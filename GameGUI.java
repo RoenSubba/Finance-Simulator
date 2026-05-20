@@ -1,11 +1,15 @@
 import javax.swing.*;
 import java.awt.*;
+import java.awt.image.BufferedImage;
+import javax.imageio.ImageIO;
+import java.io.File;
 
 public class GameGUI extends JFrame {
 
     private static final String WINDOW_TITLE  = "Life & Finance Simulator";
     private static final int    WINDOW_WIDTH  = 900;
     private static final int    WINDOW_HEIGHT = 600;
+    private static final String SHEET_PATH    = "assets/sheet.png"; // The single master image
 
     private JLabel labelName;
     private JLabel labelAge;
@@ -15,9 +19,20 @@ public class GameGUI extends JFrame {
     private JPanel timeControlPanel; 
 
     private Person player;
+    private BufferedImage masterSheet;
 
     public GameGUI(String playerName) {
         this.player = new Person(playerName);
+
+        // Pre-load the master icon sheet safely
+        try {
+            File file = new File(SHEET_PATH);
+            if (file.exists()) {
+                masterSheet = ImageIO.read(file);
+            }
+        } catch (Exception e) {
+            System.out.println("Warning: Could not load master sheet.png from assets/ folder.");
+        }
 
         setTitle(WINDOW_TITLE);
         setSize(WINDOW_WIDTH, WINDOW_HEIGHT);
@@ -78,8 +93,8 @@ public class GameGUI extends JFrame {
         panel.setBorder(BorderFactory.createTitledBorder("Time Controls"));
         panel.setBackground(new Color(30, 30, 50));
 
-        JButton btnSim1  = makeIconButton("Simulate 1 Year",  "sim1.png",  new Color(150, 200, 150));
-        JButton btnSim10 = makeIconButton("Simulate 10 Years","sim10.png", new Color(150, 170, 220));
+        JButton btnSim1  = makeIconButton("Simulate 1 Year",  new Color(150, 200, 150));
+        JButton btnSim10 = makeIconButton("Simulate 10 Years", new Color(150, 170, 220));
 
         btnSim1.addActionListener(e -> { GameEngine.simulateOneYear(player); refreshAll(); });
         btnSim10.addActionListener(e -> { GameEngine.simulateTenYears(player); refreshAll(); });
@@ -94,26 +109,27 @@ public class GameGUI extends JFrame {
         JPanel buttonRow = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 15));
         buttonRow.setOpaque(false);
 
+        // Row/Col maps directly to where the icon lives on the grid sheet image
         if (age >= 16 && age <= 21) {
-            JButton btnJob = makeIconButton("Get Part-Time Job", "job.png", new Color(220, 180, 100));
-            JButton btnPC  = makeIconButton("Buy Gaming PC", "pc.png", new Color(200, 100, 100)); 
+            JButton btnJob = makeIconButton("Get Part-Time Job", new Color(220, 180, 100));
+            JButton btnPC  = makeIconButton("Buy Gaming PC", new Color(200, 100, 100)); 
 
-            btnJob.addActionListener(e -> { GameEngine.takeInstantAction(player, "Get Part-Time Job"); refreshAll(); });
-            btnPC.addActionListener(e -> { GameEngine.takeInstantAction(player, "Buy PC"); refreshAll(); });
+            btnJob.addActionListener(e -> { triggerAction("Get Part-Time Job", 0, 0, "You got hired! Time to earn some cash flow."); });
+            btnPC.addActionListener(e -> { triggerAction("Buy PC", 0, 1, "Specs are clean! +15 Happiness."); });
             
             buttonRow.add(btnJob);
             buttonRow.add(btnPC);
 
         } else if (age >= 22 && age <= 29) {
-            JButton btnCareer  = makeIconButton("Start Career", "job.png", new Color(130, 180, 220));
-            JButton btnLoans   = makeIconButton("Pay Loans", "loans.png", new Color(220, 130, 130));
-            JButton btnInvest  = makeIconButton("Invest 50%", "invest.png", new Color(130, 200, 150));
-            JButton btnJewelry = makeIconButton("Buy Jewelry", "jewel.png", new Color(200, 100, 100)); 
+            JButton btnCareer  = makeIconButton("Start Career", new Color(130, 180, 220));
+            JButton btnLoans   = makeIconButton("Pay Loans", new Color(220, 130, 130));
+            JButton btnInvest  = makeIconButton("Invest 50%", new Color(130, 200, 150));
+            JButton btnJewelry = makeIconButton("Buy Jewelry", new Color(200, 100, 100)); 
 
-            btnCareer.addActionListener(e -> { GameEngine.takeInstantAction(player, "Start Career"); refreshAll(); });
-            btnLoans.addActionListener(e -> { GameEngine.takeInstantAction(player, "Pay Student Loans"); refreshAll(); });
-            btnInvest.addActionListener(e -> { GameEngine.takeInstantAction(player, "Invest 50%"); refreshAll(); });
-            btnJewelry.addActionListener(e -> { GameEngine.takeInstantAction(player, "Buy Jewelry"); refreshAll(); });
+            btnCareer.addActionListener(e -> { triggerAction("Start Career", 0, 2, "Welcome to adulthood. Salary unlocked!"); });
+            btnLoans.addActionListener(e -> { triggerAction("Pay Student Loans", 0, 3, "Paid a lump sum toward your education debt."); });
+            btnInvest.addActionListener(e -> { triggerAction("Invest 50%", 0, 4, "Allocating 50% of your cash into volatile assets."); });
+            btnJewelry.addActionListener(e -> { triggerAction("Buy Jewelry", 1, 1, "Drip acquired. +20 Happiness."); });
 
             buttonRow.add(btnCareer);
             buttonRow.add(btnLoans);
@@ -121,15 +137,15 @@ public class GameGUI extends JFrame {
             buttonRow.add(btnJewelry);
 
         } else if (age >= 30 && age <= 50) {
-            JButton btnHouse  = makeIconButton("Buy House", "house.png", new Color(200, 160, 100));
-            JButton btnKids   = makeIconButton("Have Kids", "kids.png", new Color(220, 140, 180));
-            JButton btnInvest = makeIconButton("Invest 50%", "invest.png", new Color(130, 200, 150));
-            JButton btnCar    = makeIconButton("Buy Sports Car", "car.png", new Color(200, 100, 100)); 
+            JButton btnHouse  = makeIconButton("Buy House", new Color(200, 160, 100));
+            JButton btnKids   = makeIconButton("Have Kids", new Color(220, 140, 180));
+            JButton btnInvest = makeIconButton("Invest 50%", new Color(130, 200, 150));
+            JButton btnCar    = makeIconButton("Buy Sports Car", new Color(200, 100, 100)); 
 
-            btnHouse.addActionListener(e -> { GameEngine.takeInstantAction(player, "Buy House"); refreshAll(); });
-            btnKids.addActionListener(e -> { GameEngine.takeInstantAction(player, "Have Kids"); refreshAll(); });
-            btnInvest.addActionListener(e -> { GameEngine.takeInstantAction(player, "Invest 50%"); refreshAll(); });
-            btnCar.addActionListener(e -> { GameEngine.takeInstantAction(player, "Buy Sports Car"); refreshAll(); });
+            btnHouse.addActionListener(e -> { triggerAction("Buy House", 1, 2, "Down payment sent. You are officially a homeowner!"); });
+            btnKids.addActionListener(e -> { triggerAction("Have Kids", 1, 3, "Congratulations! Life just got much more expensive."); });
+            btnInvest.addActionListener(e -> { triggerAction("Invest 50%", 0, 4, "Allocating 50% of your cash into volatile assets."); });
+            btnCar.addActionListener(e -> { triggerAction("Buy Sports Car", 1, 4, "Vroom. Mid-life crisis managed. +40 Happiness."); });
 
             buttonRow.add(btnHouse);
             buttonRow.add(btnKids);
@@ -137,11 +153,11 @@ public class GameGUI extends JFrame {
             buttonRow.add(btnCar);
 
         } else {
-            JButton btnRetire = makeIconButton("Max Retirement", "retirement.png", new Color(180, 140, 220));
-            JButton btnBoat   = makeIconButton("Buy Boat", "boat.png", new Color(200, 100, 100)); 
+            JButton btnRetire = makeIconButton("Max Retirement", new Color(180, 140, 220));
+            JButton btnBoat   = makeIconButton("Buy Boat", new Color(200, 100, 100)); 
             
-            btnRetire.addActionListener(e -> { GameEngine.takeInstantAction(player, "Max Retirement"); refreshAll(); });
-            btnBoat.addActionListener(e -> { GameEngine.takeInstantAction(player, "Buy Boat"); refreshAll(); });
+            btnRetire.addActionListener(e -> { triggerAction("Max Retirement", 1, 4, "Shoveling maximum capital into senior accounts."); });
+            btnBoat.addActionListener(e -> { triggerAction("Buy Boat", 2, 1, "You bought a boat! +30 Happiness."); });
             
             buttonRow.add(btnRetire);
             buttonRow.add(btnBoat);
@@ -161,6 +177,47 @@ public class GameGUI extends JFrame {
         actionPanel.repaint();
     }
 
+    /**
+     * NATIVE JAVA CROPPING LOGIC
+     * Dynamically slices out a sub-image from sheet.png based on row and column indexes.
+     */
+    private void triggerAction(String actionName, int row, int col, String message) {
+        GameEngine.takeInstantAction(player, actionName);
+
+        ImageIcon popupIcon = null;
+        if (masterSheet != null) {
+            try {
+                int totalCols = 5;
+                int totalRows = 3;
+                
+                int boxW = masterSheet.getWidth() / totalCols;
+                int boxH = masterSheet.getHeight() / totalRows;
+                
+                // Add minor structural crop padding to avoid the black label borders inside the sheet
+                int padX = (int)(boxW * 0.12);
+                int padY = (int)(boxH * 0.12);
+                
+                // Slice the sub-section out of the primary buffer array natively
+                BufferedImage cropped = masterSheet.getSubimage(
+                    (col * boxW) + padX, 
+                    (row * boxH) + padY, 
+                    boxW - (2 * padX), 
+                    boxH - (2 * padY)
+                );
+                
+                // Scale smooth for visual display popup layout
+                Image scaled = cropped.getScaledInstance(120, 120, Image.SCALE_SMOOTH);
+                popupIcon = new ImageIcon(scaled);
+            } catch (Exception ex) {
+                System.out.println("Error processing subimage grid slicing for: " + actionName);
+            }
+        }
+
+        // Trigger standard pop-up window block
+        JOptionPane.showMessageDialog(this, message, actionName, JOptionPane.INFORMATION_MESSAGE, popupIcon);
+        refreshAll();
+    }
+
     private String getLifeStageName(int age) {
         if      (age <= 21) return "Life Stage: Teen / Young Adult";
         else if (age <= 29) return "Life Stage: Young Professional";
@@ -168,10 +225,9 @@ public class GameGUI extends JFrame {
         else                return "Life Stage: Pre-Retirement";
     }
 
-    // --- GAME OVER SCREEN AT 65 ---
     private void showGameOverScreen() {
         actionPanel.removeAll();
-        timeControlPanel.setVisible(false); // Hide the time buttons
+        timeControlPanel.setVisible(false); 
 
         double nw = player.getNetWorth();
         String title = "In Debt";
@@ -217,7 +273,6 @@ public class GameGUI extends JFrame {
         actionPanel.revalidate();
         actionPanel.repaint();
 
-        // Print history to console so they can read it!
         player.printHistory();
     }
 
@@ -234,7 +289,7 @@ public class GameGUI extends JFrame {
         }
     }
 
-    private JButton makeIconButton(String label, String imageFile, Color bgColor) {
+    private JButton makeIconButton(String label, Color bgColor) {
         JButton button = new JButton(label); 
         button.setBackground(bgColor);
         button.setForeground(Color.BLACK); 
