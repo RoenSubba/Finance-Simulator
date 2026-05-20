@@ -1,16 +1,20 @@
+import java.util.ArrayList;
+
 public class Person {
     private String name;
     private int age;
-    private double cash;          // Safe money (Savings account)
-    private double investments;   // Risky money (Stock Market)
-    private int happiness;        // Opportunity cost metric (0-100)
+    private double cash;
+    private double investments;
+    private int happiness;
+    private ArrayList<String> lifeHistory;
 
     public Person(String name) {
         this.name = name;
-        this.age = 16;            // Start exactly at 16
-        this.cash = 1000.0;       // Starting teen cash
+        this.age = 16;
+        this.cash = 1000.0;
         this.investments = 0.0;
-        this.happiness = 100;     // Starts happy!
+        this.happiness = 100;
+        this.lifeHistory = new ArrayList<>(); 
     }
 
     // --- GETTERS ---
@@ -21,11 +25,22 @@ public class Person {
     public double getNetWorth() { return cash + investments; }
     public int getHappiness() { return happiness; }
 
-    // --- SETTERS / MODIFIERS ---
+    // --- HISTORY METHODS (This fixes your errors!) ---
+    public void addLifeEvent(String event) {
+        lifeHistory.add("Age " + age + ": " + event);
+    }
+
+    public void printHistory() {
+        System.out.println("--- " + name + "'s Life History ---");
+        for (String event : lifeHistory) {
+            System.out.println(event);
+        }
+    }
+    
+    // --- SETTERS ---
     public void addAge(int years) { this.age += years; }
     public void addCash(double amount) { this.cash += amount; }
     public void addInvestments(double amount) { this.investments += amount; }
-    
     public void modifyHappiness(int amount) {
         this.happiness += amount;
         if (this.happiness > 100) this.happiness = 100;
