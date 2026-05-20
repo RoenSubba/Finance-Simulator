@@ -5,7 +5,6 @@ public class GameEngine {
 
     // 1. COMPOUND INTEREST (Safe Savings)
     public static void applyCompoundInterest(Person p) {
-        // 4% annual yield on whatever cash they have
         double interest = p.getCash() * 0.04;
         p.addCash(interest);
     }
@@ -13,20 +12,18 @@ public class GameEngine {
     // 2. REALISTIC STOCK MARKET (Investments)
     public static void simulateMarketYear(Person p) {
         if (p.getInvestments() > 0) {
-            // Mean return of 8% (0.08), with a volatility/standard deviation of 15% (0.15)
             double marketReturn = (rand.nextGaussian() * 0.15) + 0.08; 
-            
             double profitOrLoss = p.getInvestments() * marketReturn;
             p.addInvestments(profitOrLoss);
         }
     }
 
-    // 3. THE TIME MACHINE (1-Year Loop)
-    public static void simulateOneYear(Person p, String lifeAction) {
-        // A. Apply the action the user chose
-        processAction(p, lifeAction);
+    // 3. THE TIME MACHINE (1-Year Loop - NO ACTION REQUIRED)
+    public static void simulateOneYear(Person p) {
+        // A. Apply recurring income and expenses
+        applyAnnualCashFlow(p);
 
-        // B. Apply Economy
+        // B. Apply Market Economy
         applyCompoundInterest(p);
         simulateMarketYear(p);
 
@@ -35,52 +32,67 @@ public class GameEngine {
     }
 
     // 4. THE TIME MACHINE (10-Year Loop)
-    public static void simulateTenYears(Person p, String lifeAction) {
+    public static void simulateTenYears(Person p) {
         for (int i = 0; i < 10; i++) {
-            simulateOneYear(p, lifeAction);
+            simulateOneYear(p);
         }
     }
 
-    // 5. ACTION PROCESSOR & OPPORTUNITY COST
-    private static void processAction(Person p, String action) {
+    // 5. HELPER: CALCULATE NET CASH FLOW FOR THE GUI
+    public static double getAnnualCashFlow(Person p) {
+        double flow = 0;
+        if (p.hasPartTimeJob()) flow += 12000;
+        if (p.hasCareer()) flow += 65000;
+        if (p.ownsHouse()) flow -= 18000;
+        if (p.hasKids()) flow -= 15000;
+        return flow;
+    }
+
+    // 6. APPLY THE CASH FLOW
+    private static void applyAnnualCashFlow(Person p) {
+        p.addCash(getAnnualCashFlow(p));
+        
+        // Apply recurring opportunity costs
+        if (p.hasPartTimeJob()) p.modifyHappiness(-5);
+        if (p.hasCareer()) p.modifyHappiness(-10);
+    }
+
+    // 7. INSTANT ACTIONS (What happens EXACTLY when a button is clicked)
+    public static void takeInstantAction(Person p, String action) {
         switch (action) {
-            case "Part-Time Job":
-                p.addCash(5000);          // Teenager income
-                p.modifyHappiness(-5);    // Opportunity cost: less free time
-                p.addLifeEvent("Worked a part-time job.");
-                break;
-            case "Save":
-                // They just let compound interest do its thing safely
-                p.modifyHappiness(2);     // Peace of mind
+            case "Get Part-Time Job":
+                p.setPartTimeJob(true);
+                p.addLifeEvent("Hired for a part-time job.");
                 break;
             case "Start Career":
-                p.addCash(60000);         // Adult salary
-                p.modifyHappiness(-10);   // Adulting is stressful
-                p.addLifeEvent("Worked a full-time career.");
-                break;
-            case "Pay Student Loans":
-                p.addCash(-10000);        // Paying down debt
-                p.modifyHappiness(10);    // Relief of losing debt
-                p.addLifeEvent("Paid down student loans.");
+                p.setPartTimeJob(false); // Quit the teen job
+                p.setCareer(true);
+                p.addLifeEvent("Started a professional career.");
                 break;
             case "Invest 50%":
                 double investAmount = p.getCash() * 0.50;
                 p.addCash(-investAmount);
                 p.addInvestments(investAmount);
-                p.addLifeEvent("Moved 50% of cash into the volatile stock market.");
+                p.addLifeEvent("Moved 50% of cash into investments.");
+                break;
+            case "Pay Student Loans":
+                p.addCash(-20000); // One time lump-sum payment
+                p.modifyHappiness(15);
+                p.addLifeEvent("Paid off a chunk of student loans.");
                 break;
             case "Buy House":
-                p.addCash(-40000);        // Massive down payment
-                p.modifyHappiness(20);    // Huge life milestone
-                p.addLifeEvent("Bought a house!");
+                p.setOwnsHouse(true);
+                p.addCash(-50000); // Down Payment
+                p.modifyHappiness(20);
+                p.addLifeEvent("Bought a house! Down payment made.");
                 break;
             case "Have Kids":
-                p.addCash(-15000);        // Kids are very expensive
-                p.modifyHappiness(30);    // But emotionally rewarding
-                p.addLifeEvent("Had a child. Expenses went up!");
+                p.setHasKids(true);
+                p.modifyHappiness(30);
+                p.addLifeEvent("Had a child!");
                 break;
             case "Max Retirement":
-                double retirement = p.getCash() * 0.80; // Shovel everything into investments
+                double retirement = p.getCash() * 0.80;
                 p.addCash(-retirement);
                 p.addInvestments(retirement);
                 p.addLifeEvent("Maxed out retirement accounts.");

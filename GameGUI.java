@@ -3,19 +3,16 @@ import java.awt.*;
 
 public class GameGUI extends JFrame {
 
-    // --- GUI CONSTANTS ---
     private static final String WINDOW_TITLE  = "Life & Finance Simulator";
     private static final int    WINDOW_WIDTH  = 900;
     private static final int    WINDOW_HEIGHT = 600;
-    private static final String ASSET_PATH    = "assets/"; 
 
-    // --- GUI PANELS & LABELS ---
     private JLabel labelName;
     private JLabel labelAge;
     private JLabel labelNetWorth;
+    private JLabel labelCashFlow; // <-- NEW
     private JPanel actionPanel;
 
-    // --- THE REAL BACKEND LINK ---
     private Person player;
 
     public GameGUI(String playerName) {
@@ -38,21 +35,23 @@ public class GameGUI extends JFrame {
         add(buildTimeControlPanel(), BorderLayout.SOUTH);
     }
 
-    // --- TOP STATS PANEL ---
     private JPanel buildStatsPanel() {
-        JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 20, 8));
+        JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 8));
         panel.setBorder(BorderFactory.createTitledBorder("Player Stats"));
         panel.setBackground(new Color(30, 30, 50));
 
         labelName     = makeStatLabel("Name: "      + player.getName());
         labelAge      = makeStatLabel("Age: "       + player.getAge());
         labelNetWorth = makeStatLabel("Net Worth: $" + (int)player.getNetWorth());
+        labelCashFlow = makeStatLabel("Cash Flow: $" + (int)GameEngine.getAnnualCashFlow(player) + "/yr");
 
         panel.add(labelName);
         panel.add(new JSeparator(SwingConstants.VERTICAL));
         panel.add(labelAge);
         panel.add(new JSeparator(SwingConstants.VERTICAL));
         panel.add(labelNetWorth);
+        panel.add(new JSeparator(SwingConstants.VERTICAL));
+        panel.add(labelCashFlow);
 
         return panel;
     }
@@ -60,7 +59,7 @@ public class GameGUI extends JFrame {
     private JLabel makeStatLabel(String text) {
         JLabel label = new JLabel(text);
         label.setForeground(Color.WHITE);
-        label.setFont(new Font("Monospaced", Font.BOLD, 16));
+        label.setFont(new Font("Monospaced", Font.BOLD, 15));
         return label;
     }
 
@@ -71,7 +70,7 @@ public class GameGUI extends JFrame {
         return actionPanel;
     }
 
-    // --- BOTTOM TIME CONTROLS ---
+    // --- BOTTOM TIME CONTROLS (Only these move time forward now!) ---
     private JPanel buildTimeControlPanel() {
         JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 10));
         panel.setBorder(BorderFactory.createTitledBorder("Time Controls"));
@@ -81,12 +80,12 @@ public class GameGUI extends JFrame {
         JButton btnSim10 = makeIconButton("Simulate 10 Years","sim10.png", new Color(150, 170, 220));
 
         btnSim1.addActionListener(e -> {
-            GameEngine.simulateOneYear(player, "Save");
+            GameEngine.simulateOneYear(player);
             refreshAll();
         });
 
         btnSim10.addActionListener(e -> {
-            GameEngine.simulateTenYears(player, "Save");
+            GameEngine.simulateTenYears(player);
             refreshAll();
         });
 
@@ -95,7 +94,7 @@ public class GameGUI extends JFrame {
         return panel;
     }
 
-    // --- CENTER DYNAMIC MENU ---
+    // --- CENTER DYNAMIC MENU (Instant actions!) ---
     public void updateActionPanel(int age) {
         actionPanel.removeAll();
         JPanel buttonRow = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 15));
@@ -103,22 +102,19 @@ public class GameGUI extends JFrame {
 
         if (age >= 16 && age <= 21) {
             JButton btnJob  = makeIconButton("Get Part-Time Job", "job.png",  new Color(220, 180, 100));
-            JButton btnSave = makeIconButton("Save",              "save.png", new Color(130, 200, 170));
-
-            btnJob.addActionListener(e -> { GameEngine.simulateOneYear(player, "Part-Time Job"); refreshAll(); });
-            btnSave.addActionListener(e -> { GameEngine.simulateOneYear(player, "Save"); refreshAll(); });
+            // Save is handled passively now by time!
             
+            btnJob.addActionListener(e -> { GameEngine.takeInstantAction(player, "Get Part-Time Job"); refreshAll(); });
             buttonRow.add(btnJob);
-            buttonRow.add(btnSave);
 
         } else if (age >= 22 && age <= 29) {
             JButton btnCareer = makeIconButton("Start Career",       "job.png",   new Color(130, 180, 220));
             JButton btnLoans  = makeIconButton("Pay Student Loans",  "loans.png", new Color(220, 130, 130));
             JButton btnInvest = makeIconButton("Invest 50%",         "invest.png",new Color(130, 200, 150));
 
-            btnCareer.addActionListener(e -> { GameEngine.simulateOneYear(player, "Start Career"); refreshAll(); });
-            btnLoans.addActionListener(e -> { GameEngine.simulateOneYear(player, "Pay Student Loans"); refreshAll(); });
-            btnInvest.addActionListener(e -> { GameEngine.simulateOneYear(player, "Invest 50%"); refreshAll(); });
+            btnCareer.addActionListener(e -> { GameEngine.takeInstantAction(player, "Start Career"); refreshAll(); });
+            btnLoans.addActionListener(e -> { GameEngine.takeInstantAction(player, "Pay Student Loans"); refreshAll(); });
+            btnInvest.addActionListener(e -> { GameEngine.takeInstantAction(player, "Invest 50%"); refreshAll(); });
 
             buttonRow.add(btnCareer);
             buttonRow.add(btnLoans);
@@ -129,9 +125,9 @@ public class GameGUI extends JFrame {
             JButton btnKids   = makeIconButton("Have Kids",  "kids.png",   new Color(220, 140, 180));
             JButton btnInvest = makeIconButton("Invest 50%", "invest.png", new Color(130, 200, 150));
 
-            btnHouse.addActionListener(e -> { GameEngine.simulateOneYear(player, "Buy House"); refreshAll(); });
-            btnKids.addActionListener(e -> { GameEngine.simulateOneYear(player, "Have Kids"); refreshAll(); });
-            btnInvest.addActionListener(e -> { GameEngine.simulateOneYear(player, "Invest 50%"); refreshAll(); });
+            btnHouse.addActionListener(e -> { GameEngine.takeInstantAction(player, "Buy House"); refreshAll(); });
+            btnKids.addActionListener(e -> { GameEngine.takeInstantAction(player, "Have Kids"); refreshAll(); });
+            btnInvest.addActionListener(e -> { GameEngine.takeInstantAction(player, "Invest 50%"); refreshAll(); });
 
             buttonRow.add(btnHouse);
             buttonRow.add(btnKids);
@@ -139,7 +135,7 @@ public class GameGUI extends JFrame {
 
         } else {
             JButton btnRetire = makeIconButton("Max Retirement", "retirement.png", new Color(180, 140, 220));
-            btnRetire.addActionListener(e -> { GameEngine.simulateOneYear(player, "Max Retirement"); refreshAll(); });
+            btnRetire.addActionListener(e -> { GameEngine.takeInstantAction(player, "Max Retirement"); refreshAll(); });
             buttonRow.add(btnRetire);
         }
 
@@ -164,30 +160,28 @@ public class GameGUI extends JFrame {
         else                return "Life Stage: Pre-Retirement";
     }
 
-    // --- REFRESH SCREEN ---
     public void refreshAll() {
         labelName.setText("Name: " + player.getName());
         labelAge.setText("Age: " + player.getAge());
         labelNetWorth.setText("Net Worth: $" + (int)player.getNetWorth());
+        labelCashFlow.setText("Cash Flow: $" + (int)GameEngine.getAnnualCashFlow(player) + "/yr");
         
         updateActionPanel(player.getAge());
     }
 
-    // --- ICON BUTTON MAKER (UPDATED FOR READABILITY) ---
     private JButton makeIconButton(String label, String imageFile, Color bgColor) {
         JButton button = new JButton(label); 
         button.setBackground(bgColor);
-        button.setForeground(Color.BLACK); // <-- Changed from WHITE to BLACK
-        button.setFont(new Font("SansSerif", Font.BOLD, 14)); // <-- Increased font size slightly
+        button.setForeground(Color.BLACK); 
+        button.setFont(new Font("SansSerif", Font.BOLD, 14)); 
         button.setFocusPainted(false);
         button.setOpaque(true); 
         button.setBorderPainted(true);
-        button.setPreferredSize(new Dimension(170, 60)); // Made slightly wider for bigger text
+        button.setPreferredSize(new Dimension(170, 60)); 
         button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         return button;
     }
 
-    // --- START APP ---
     public static void main(String[] args) {
         String name = JOptionPane.showInputDialog(null, "Enter your name to begin your life:");
         if(name == null || name.trim().isEmpty()) name = "Player";

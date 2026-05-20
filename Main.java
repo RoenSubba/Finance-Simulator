@@ -10,9 +10,13 @@ public class Main {
         System.out.println("Starting Investments: $" + testSubject.getInvestments());
         System.out.println("----------------------------------------");
 
-        // 2. Test the new 10-Year Loop (Ages 16-26)
-        System.out.println(">>> SIMULATING 10 YEARS - Action: Part-Time Job...");
-        GameEngine.simulateTenYears(testSubject, "Part-Time Job");
+        // 2. Test the New Architecture: Instant Action FIRST, then Time
+        System.out.println(">>> INSTANT ACTION: Getting a Part-Time Job...");
+        GameEngine.takeInstantAction(testSubject, "Get Part-Time Job");
+        System.out.println("Annual Cash Flow is now: $" + GameEngine.getAnnualCashFlow(testSubject) + "/yr");
+
+        System.out.println("\n>>> SIMULATING 10 YEARS...");
+        GameEngine.simulateTenYears(testSubject);
 
         System.out.println("New Age: " + testSubject.getAge());
         System.out.println("Cash: $" + (int)testSubject.getCash());
@@ -20,9 +24,12 @@ public class Main {
         System.out.println("Happiness: " + testSubject.getHappiness() + "/100");
         System.out.println("----------------------------------------");
 
-        // 3. Test the Stock Market Math (Age 26-27)
-        System.out.println(">>> SIMULATING 1 YEAR - Action: Invest 50%...");
-        GameEngine.simulateOneYear(testSubject, "Invest 50%");
+        // 3. Test Capital Allocation and Market Math
+        System.out.println(">>> INSTANT ACTION: Investing 50% of cash...");
+        GameEngine.takeInstantAction(testSubject, "Invest 50%");
+
+        System.out.println("\n>>> SIMULATING 1 YEAR...");
+        GameEngine.simulateOneYear(testSubject);
 
         System.out.println("New Age: " + testSubject.getAge());
         System.out.println("Cash: $" + (int)testSubject.getCash());
@@ -31,11 +38,9 @@ public class Main {
 
         // 4. Test the Life History ArrayList
         System.out.println(">>> PRINTING LIFE HISTORY...");
-        testSubject.addLifeEvent("Started working a Part-Time Job.");
-        testSubject.addLifeEvent("Invested 50% of cash into the stock market.");
         testSubject.printHistory();
         System.out.println("----------------------------------------");
 
-        System.out.println("Engine test complete! Math is working perfectly.");
+        System.out.println("Engine test complete! Math and Cash Flow are working perfectly.");
     }
 }
