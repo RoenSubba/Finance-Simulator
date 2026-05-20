@@ -9,7 +9,7 @@ public class GameGUI extends JFrame {
     private static final String WINDOW_TITLE  = "Life & Finance Simulator";
     private static final int    WINDOW_WIDTH  = 900;
     private static final int    WINDOW_HEIGHT = 600;
-    private static final String SHEET_PATH    = "assets/sheet.png"; // The single master image
+    private static final String SHEET_PATH    = "assets/sheet.png"; 
 
     private JLabel labelName;
     private JLabel labelAge;
@@ -24,7 +24,6 @@ public class GameGUI extends JFrame {
     public GameGUI(String playerName) {
         this.player = new Person(playerName);
 
-        // Pre-load the master icon sheet safely
         try {
             File file = new File(SHEET_PATH);
             if (file.exists()) {
@@ -96,12 +95,36 @@ public class GameGUI extends JFrame {
         JButton btnSim1  = makeIconButton("Simulate 1 Year",  new Color(150, 200, 150));
         JButton btnSim10 = makeIconButton("Simulate 10 Years", new Color(150, 170, 220));
 
-        btnSim1.addActionListener(e -> { GameEngine.simulateOneYear(player); refreshAll(); });
-        btnSim10.addActionListener(e -> { GameEngine.simulateTenYears(player); refreshAll(); });
+        // Detects string messages from the math loops and fires popup graphics
+        btnSim1.addActionListener(e -> {
+            String emergency = GameEngine.simulateOneYear(player);
+            handleTimelineEmergency(emergency);
+            refreshAll();
+        });
+
+        btnSim10.addActionListener(e -> {
+            String emergency = GameEngine.simulateTenYears(player);
+            handleTimelineEmergency(emergency);
+            refreshAll();
+        });
 
         panel.add(btnSim1);
         panel.add(btnSim10);
         return panel;
+    }
+
+    private void handleTimelineEmergency(String msg) {
+        if (msg == null) return;
+        
+        int row = 0, col = 3; // Defaults to the loans/billing image coordinates
+        if (msg.contains("market") || msg.contains("portfolio")) {
+            row = 1; col = 4; // Changes tile coordinate to stock market graphic
+        } else if (msg.contains("career") || msg.contains("downsizing")) {
+            row = 0; col = 2; // Changes tile coordinate to office career graphic
+        }
+
+        ImageIcon emergencyIcon = sliceIconFromSheet(row, col);
+        JOptionPane.showMessageDialog(this, msg, "CRITICAL LIFE EVENT", JOptionPane.WARNING_MESSAGE, emergencyIcon);
     }
 
     public void updateActionPanel(int age) {
@@ -109,7 +132,6 @@ public class GameGUI extends JFrame {
         JPanel buttonRow = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 15));
         buttonRow.setOpaque(false);
 
-        // Row/Col maps directly to where the icon lives on the grid sheet image
         if (age >= 16 && age <= 21) {
             JButton btnJob = makeIconButton("Get Part-Time Job", new Color(220, 180, 100));
             JButton btnPC  = makeIconButton("Buy Gaming PC", new Color(200, 100, 100)); 
@@ -177,45 +199,30 @@ public class GameGUI extends JFrame {
         actionPanel.repaint();
     }
 
-    /**
-     * NATIVE JAVA CROPPING LOGIC
-     * Dynamically slices out a sub-image from sheet.png based on row and column indexes.
-     */
     private void triggerAction(String actionName, int row, int col, String message) {
         GameEngine.takeInstantAction(player, actionName);
-
-        ImageIcon popupIcon = null;
-        if (masterSheet != null) {
-            try {
-                int totalCols = 5;
-                int totalRows = 3;
-                
-                int boxW = masterSheet.getWidth() / totalCols;
-                int boxH = masterSheet.getHeight() / totalRows;
-                
-                // Add minor structural crop padding to avoid the black label borders inside the sheet
-                int padX = (int)(boxW * 0.12);
-                int padY = (int)(boxH * 0.12);
-                
-                // Slice the sub-section out of the primary buffer array natively
-                BufferedImage cropped = masterSheet.getSubimage(
-                    (col * boxW) + padX, 
-                    (row * boxH) + padY, 
-                    boxW - (2 * padX), 
-                    boxH - (2 * padY)
-                );
-                
-                // Scale smooth for visual display popup layout
-                Image scaled = cropped.getScaledInstance(120, 120, Image.SCALE_SMOOTH);
-                popupIcon = new ImageIcon(scaled);
-            } catch (Exception ex) {
-                System.out.println("Error processing subimage grid slicing for: " + actionName);
-            }
-        }
-
-        // Trigger standard pop-up window block
+        ImageIcon popupIcon = sliceIconFromSheet(row, col);
         JOptionPane.showMessageDialog(this, message, actionName, JOptionPane.INFORMATION_MESSAGE, popupIcon);
         refreshAll();
+    }
+
+    // Isolated extraction logic so both button milestones and random timeline drops can share it
+    private ImageIcon sliceIconFromSheet(int row, int col) {
+        if (masterSheet == null) return null;
+        try {
+            int totalCols = 5, totalRows = 3;
+            int boxW = masterSheet.getWidth() / totalCols;
+            int boxH = masterSheet.getHeight() / totalRows;
+            int padX = (int)(boxW * 0.12), padY = (int)(boxH * 0.12);
+
+            BufferedImage cropped = masterSheet.getSubimage(
+                (col * boxW) + padX, (row * boxH) + padY, 
+                boxW - (2 * padX), boxH - (2 * padY)
+            );
+            return new ImageIcon(cropped.getScaledInstance(120, 120, Image.SCALE_SMOOTH));
+        } catch (Exception ex) {
+            return null;
+        }
     }
 
     private String getLifeStageName(int age) {
