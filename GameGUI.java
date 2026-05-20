@@ -19,7 +19,6 @@ public class GameGUI extends JFrame {
     private Person player;
 
     public GameGUI(String playerName) {
-        // Initialize Partner A's Person object
         this.player = new Person(playerName);
 
         setTitle(WINDOW_TITLE);
@@ -35,7 +34,7 @@ public class GameGUI extends JFrame {
     private void buildFrame() {
         setLayout(new BorderLayout(10, 10));
         add(buildStatsPanel(),       BorderLayout.NORTH);
-        add(buildActionPanelShell(), BorderLayout.CENTER); // <-- Fixed line!
+        add(buildActionPanelShell(), BorderLayout.CENTER);
         add(buildTimeControlPanel(), BorderLayout.SOUTH);
     }
 
@@ -78,8 +77,8 @@ public class GameGUI extends JFrame {
         panel.setBorder(BorderFactory.createTitledBorder("Time Controls"));
         panel.setBackground(new Color(30, 30, 50));
 
-        JButton btnSim1  = makeIconButton("Simulate 1 Year",  "sim1.png",  new Color(60, 120, 60));
-        JButton btnSim10 = makeIconButton("Simulate 10 Years","sim10.png", new Color(60, 80, 140));
+        JButton btnSim1  = makeIconButton("Simulate 1 Year",  "sim1.png",  new Color(150, 200, 150));
+        JButton btnSim10 = makeIconButton("Simulate 10 Years","sim10.png", new Color(150, 170, 220));
 
         btnSim1.addActionListener(e -> {
             GameEngine.simulateOneYear(player, "Save");
@@ -103,8 +102,8 @@ public class GameGUI extends JFrame {
         buttonRow.setOpaque(false);
 
         if (age >= 16 && age <= 21) {
-            JButton btnJob  = makeIconButton("Get Part-Time Job", "job.png",  new Color(180, 120, 30));
-            JButton btnSave = makeIconButton("Save Money",        "save.png", new Color(30, 140, 100));
+            JButton btnJob  = makeIconButton("Get Part-Time Job", "job.png",  new Color(220, 180, 100));
+            JButton btnSave = makeIconButton("Save",              "save.png", new Color(130, 200, 170));
 
             btnJob.addActionListener(e -> { GameEngine.simulateOneYear(player, "Part-Time Job"); refreshAll(); });
             btnSave.addActionListener(e -> { GameEngine.simulateOneYear(player, "Save"); refreshAll(); });
@@ -113,9 +112,9 @@ public class GameGUI extends JFrame {
             buttonRow.add(btnSave);
 
         } else if (age >= 22 && age <= 29) {
-            JButton btnCareer = makeIconButton("Start Career",       "job.png",   new Color(30, 100, 180));
-            JButton btnLoans  = makeIconButton("Pay Student Loans",  "loans.png", new Color(180, 60, 60));
-            JButton btnInvest = makeIconButton("Invest 50%",         "invest.png",new Color(30, 160, 80));
+            JButton btnCareer = makeIconButton("Start Career",       "job.png",   new Color(130, 180, 220));
+            JButton btnLoans  = makeIconButton("Pay Student Loans",  "loans.png", new Color(220, 130, 130));
+            JButton btnInvest = makeIconButton("Invest 50%",         "invest.png",new Color(130, 200, 150));
 
             btnCareer.addActionListener(e -> { GameEngine.simulateOneYear(player, "Start Career"); refreshAll(); });
             btnLoans.addActionListener(e -> { GameEngine.simulateOneYear(player, "Pay Student Loans"); refreshAll(); });
@@ -126,9 +125,9 @@ public class GameGUI extends JFrame {
             buttonRow.add(btnInvest);
 
         } else if (age >= 30 && age <= 50) {
-            JButton btnHouse  = makeIconButton("Buy House",  "house.png",  new Color(140, 80, 20));
-            JButton btnKids   = makeIconButton("Have Kids",  "kids.png",   new Color(180, 60, 120));
-            JButton btnInvest = makeIconButton("Invest 50%", "invest.png", new Color(30, 160, 80));
+            JButton btnHouse  = makeIconButton("Buy House",  "house.png",  new Color(200, 160, 100));
+            JButton btnKids   = makeIconButton("Have Kids",  "kids.png",   new Color(220, 140, 180));
+            JButton btnInvest = makeIconButton("Invest 50%", "invest.png", new Color(130, 200, 150));
 
             btnHouse.addActionListener(e -> { GameEngine.simulateOneYear(player, "Buy House"); refreshAll(); });
             btnKids.addActionListener(e -> { GameEngine.simulateOneYear(player, "Have Kids"); refreshAll(); });
@@ -139,7 +138,7 @@ public class GameGUI extends JFrame {
             buttonRow.add(btnInvest);
 
         } else {
-            JButton btnRetire = makeIconButton("Max Retirement", "retirement.png", new Color(100, 60, 180));
+            JButton btnRetire = makeIconButton("Max Retirement", "retirement.png", new Color(180, 140, 220));
             btnRetire.addActionListener(e -> { GameEngine.simulateOneYear(player, "Max Retirement"); refreshAll(); });
             buttonRow.add(btnRetire);
         }
@@ -174,14 +173,16 @@ public class GameGUI extends JFrame {
         updateActionPanel(player.getAge());
     }
 
-    // --- ICON BUTTON MAKER ---
+    // --- ICON BUTTON MAKER (UPDATED FOR READABILITY) ---
     private JButton makeIconButton(String label, String imageFile, Color bgColor) {
         JButton button = new JButton(label); 
         button.setBackground(bgColor);
-        button.setForeground(Color.WHITE);
-        button.setFont(new Font("SansSerif", Font.BOLD, 13));
+        button.setForeground(Color.BLACK); // <-- Changed from WHITE to BLACK
+        button.setFont(new Font("SansSerif", Font.BOLD, 14)); // <-- Increased font size slightly
         button.setFocusPainted(false);
-        button.setPreferredSize(new Dimension(160, 60));
+        button.setOpaque(true); 
+        button.setBorderPainted(true);
+        button.setPreferredSize(new Dimension(170, 60)); // Made slightly wider for bigger text
         button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         return button;
     }
