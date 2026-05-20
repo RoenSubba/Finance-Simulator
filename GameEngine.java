@@ -27,7 +27,7 @@ public class GameEngine {
 
     public static void simulateTenYears(Person p) {
         for (int i = 0; i < 10; i++) {
-            if (p.getAge() >= 65) break; // Stop loop if they hit 65
+            if (p.getAge() >= 65) break; 
             simulateOneYear(p);
         }
     }

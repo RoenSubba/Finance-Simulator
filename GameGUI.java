@@ -12,7 +12,7 @@ public class GameGUI extends JFrame {
     private JLabel labelNetWorth;
     private JLabel labelCashFlow; 
     private JPanel actionPanel;
-    private JPanel timeControlPanel; // Moved here so we can hide it at age 65
+    private JPanel timeControlPanel; 
 
     private Person player;
 
@@ -96,7 +96,7 @@ public class GameGUI extends JFrame {
 
         if (age >= 16 && age <= 21) {
             JButton btnJob = makeIconButton("Get Part-Time Job", "job.png", new Color(220, 180, 100));
-            JButton btnPC  = makeIconButton("Buy Gaming PC", "pc.png", new Color(200, 100, 100)); // Vanity
+            JButton btnPC  = makeIconButton("Buy Gaming PC", "pc.png", new Color(200, 100, 100)); 
 
             btnJob.addActionListener(e -> { GameEngine.takeInstantAction(player, "Get Part-Time Job"); refreshAll(); });
             btnPC.addActionListener(e -> { GameEngine.takeInstantAction(player, "Buy PC"); refreshAll(); });
@@ -108,7 +108,7 @@ public class GameGUI extends JFrame {
             JButton btnCareer  = makeIconButton("Start Career", "job.png", new Color(130, 180, 220));
             JButton btnLoans   = makeIconButton("Pay Loans", "loans.png", new Color(220, 130, 130));
             JButton btnInvest  = makeIconButton("Invest 50%", "invest.png", new Color(130, 200, 150));
-            JButton btnJewelry = makeIconButton("Buy Jewelry", "jewel.png", new Color(200, 100, 100)); // Vanity
+            JButton btnJewelry = makeIconButton("Buy Jewelry", "jewel.png", new Color(200, 100, 100)); 
 
             btnCareer.addActionListener(e -> { GameEngine.takeInstantAction(player, "Start Career"); refreshAll(); });
             btnLoans.addActionListener(e -> { GameEngine.takeInstantAction(player, "Pay Student Loans"); refreshAll(); });
@@ -124,7 +124,7 @@ public class GameGUI extends JFrame {
             JButton btnHouse  = makeIconButton("Buy House", "house.png", new Color(200, 160, 100));
             JButton btnKids   = makeIconButton("Have Kids", "kids.png", new Color(220, 140, 180));
             JButton btnInvest = makeIconButton("Invest 50%", "invest.png", new Color(130, 200, 150));
-            JButton btnCar    = makeIconButton("Buy Sports Car", "car.png", new Color(200, 100, 100)); // Vanity
+            JButton btnCar    = makeIconButton("Buy Sports Car", "car.png", new Color(200, 100, 100)); 
 
             btnHouse.addActionListener(e -> { GameEngine.takeInstantAction(player, "Buy House"); refreshAll(); });
             btnKids.addActionListener(e -> { GameEngine.takeInstantAction(player, "Have Kids"); refreshAll(); });
@@ -138,7 +138,7 @@ public class GameGUI extends JFrame {
 
         } else {
             JButton btnRetire = makeIconButton("Max Retirement", "retirement.png", new Color(180, 140, 220));
-            JButton btnBoat   = makeIconButton("Buy Boat", "boat.png", new Color(200, 100, 100)); // Vanity
+            JButton btnBoat   = makeIconButton("Buy Boat", "boat.png", new Color(200, 100, 100)); 
             
             btnRetire.addActionListener(e -> { GameEngine.takeInstantAction(player, "Max Retirement"); refreshAll(); });
             btnBoat.addActionListener(e -> { GameEngine.takeInstantAction(player, "Buy Boat"); refreshAll(); });
@@ -174,11 +174,11 @@ public class GameGUI extends JFrame {
         timeControlPanel.setVisible(false); // Hide the time buttons
 
         double nw = player.getNetWorth();
-        String title = "Broke";
-        if (nw > 0) title = "Surviving";
-        if (nw > 100000) title = "Comfortable";
-        if (nw > 1000000) title = "Millionaire";
-        if (nw > 5000000) title = "Wealthy Tycoon";
+        String title = "In Debt";
+        if (nw > 0) title = "Getting By";
+        if (nw > 100000) title = "Financially Secure";
+        if (nw > 1000000) title = "Financially Independent";
+        if (nw > 5000000) title = "Generational Wealth";
 
         JPanel summary = new JPanel();
         summary.setLayout(new BoxLayout(summary, BoxLayout.Y_AXIS));

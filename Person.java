@@ -8,7 +8,7 @@ public class Person {
     private int happiness;
     private ArrayList<String> lifeHistory;
 
-    // --- NEW: LIFE STATUS FLAGS ---
+    // --- LIFE STATUS FLAGS ---
     private boolean hasPartTimeJob;
     private boolean hasCareer;
     private boolean ownsHouse;
@@ -22,7 +22,6 @@ public class Person {
         this.happiness = 100;
         this.lifeHistory = new ArrayList<>();
         
-        // Start with no assets or jobs
         this.hasPartTimeJob = false;
         this.hasCareer = false;
         this.ownsHouse = false;
