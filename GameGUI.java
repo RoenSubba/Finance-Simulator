@@ -1,5 +1,7 @@
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import javax.imageio.ImageIO;
 import java.io.File;
@@ -81,7 +83,7 @@ public class GameGUI extends JFrame {
     }
 
     private JPanel buildActionPanelShell() {
-        actionPanel = new JPanel(new GridBagLayout()); 
+        actionPanel = new JPanel(new BorderLayout()); 
         actionPanel.setBorder(BorderFactory.createTitledBorder("Actions"));
         actionPanel.setBackground(new Color(20, 20, 40));
         return actionPanel;
@@ -95,16 +97,20 @@ public class GameGUI extends JFrame {
         JButton btnSim1  = makeIconButton("Simulate 1 Year",  new Color(150, 200, 150));
         JButton btnSim10 = makeIconButton("Simulate 10 Years", new Color(150, 170, 220));
 
-        btnSim1.addActionListener(e -> {
-            String eventMsg = GameEngine.simulateOneYear(player);
-            handleTimelineEvent(eventMsg);
-            refreshAll();
+        btnSim1.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                String eventMsg = GameEngine.simulateOneYear(player);
+                handleTimelineEvent(eventMsg);
+                refreshAll();
+            }
         });
 
-        btnSim10.addActionListener(e -> {
-            String eventMsg = GameEngine.simulateTenYears(player);
-            handleTimelineEvent(eventMsg);
-            refreshAll();
+        btnSim10.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                String eventMsg = GameEngine.simulateTenYears(player);
+                handleTimelineEvent(eventMsg);
+                refreshAll();
+            }
         });
 
         panel.add(btnSim1);
@@ -112,26 +118,26 @@ public class GameGUI extends JFrame {
         return panel;
     }
 
-    // Handles picking icons for BOTH positive and negative events!
     private void handleTimelineEvent(String msg) {
         if (msg == null) return;
         
-        int row = 0, col = 3; // Defaults to billing/cash icon
-        int messageType = JOptionPane.WARNING_MESSAGE;
+        int row = 0;
+        int col = 3; 
+        boolean isGoodNews = false; 
 
         if (msg.contains("WINDFALL")) {
-            messageType = JOptionPane.INFORMATION_MESSAGE; // Green/Blue info styling
-            if (msg.contains("bonus")) { row = 0; col = 0; } // Money bag
-            else if (msg.contains("Market") || msg.contains("Portfolio")) { row = 0; col = 4; } // Bull market chart
-            else { row = 0; col = 3; } // Cash refund
+            isGoodNews = true;
+            if (msg.contains("bonus")) { row = 0; col = 0; } 
+            else if (msg.contains("Market") || msg.contains("Portfolio")) { row = 0; col = 4; } 
+            else { row = 0; col = 3; } 
         } else {
-            // It's an emergency
             if (msg.contains("market") || msg.contains("correction")) { row = 1; col = 4; } 
             else if (msg.contains("career") || msg.contains("downsizing")) { row = 0; col = 2; } 
         }
 
         ImageIcon icon = sliceIconFromSheet(row, col);
-        JOptionPane.showMessageDialog(this, msg, msg.contains("WINDFALL") ? "GOOD NEWS!" : "CRITICAL ALERT", messageType, icon);
+        String popupTitle = isGoodNews ? "GOOD NEWS!" : "CRITICAL ALERT";
+        showCustomPopup(popupTitle, msg, icon, isGoodNews);
     }
 
     public void updateActionPanel(int age) {
@@ -139,38 +145,63 @@ public class GameGUI extends JFrame {
         JPanel buttonRow = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 15));
         buttonRow.setOpaque(false);
 
-        // --- NEW EMERGENCY OVERRIDE LOGIC ---
-        // If an adult gets laid off, dynamically pop the career option back up instantly!
-        if (age >= 22 && !player.hasCareer()) {
+        if (age >= 22 && player.hasCareer() == false) {
             JButton btnEmergencyJob = makeIconButton("Apply for New Job", new Color(255, 200, 100));
-            btnEmergencyJob.addActionListener(e -> { triggerAction("Start Career", 0, 2, "Interviews passed! You successfully replaced your career income stream."); });
+            btnEmergencyJob.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    triggerAction("Start Career", 0, 2, "Interviews passed! You successfully replaced your career income stream.");
+                }
+            });
             buttonRow.add(btnEmergencyJob);
         }
 
-        // --- STANDARD LIFE STAGE CONTROLS ---
         if (age >= 16 && age <= 21) {
-            if (!player.hasPartTimeJob()) {
+            if (player.hasPartTimeJob() == false) {
                 JButton btnJob = makeIconButton("Get Part-Time Job", new Color(220, 180, 100));
-                btnJob.addActionListener(e -> { triggerAction("Get Part-Time Job", 0, 0, "You got hired! Time to earn some cash flow."); });
+                btnJob.addActionListener(new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        triggerAction("Get Part-Time Job", 0, 0, "You got hired! Time to earn some cash flow.");
+                    }
+                });
                 buttonRow.add(btnJob);
             }
             JButton btnPC  = makeIconButton("Buy Gaming PC", new Color(200, 100, 100)); 
-            btnPC.addActionListener(e -> { triggerAction("Buy PC", 0, 1, "Specs are clean! +15 Happiness."); });
+            btnPC.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    triggerAction("Buy PC", 0, 1, "Specs are clean! +15 Happiness.");
+                }
+            });
             buttonRow.add(btnPC);
 
         } else if (age >= 22 && age <= 29) {
-            if (!player.hasCareer()) { // Only show if they haven't clicked it yet
+            if (player.hasCareer() == false) { 
                 JButton btnCareer = makeIconButton("Start Career", new Color(130, 180, 220));
-                btnCareer.addActionListener(e -> { triggerAction("Start Career", 0, 2, "Welcome to adulthood. Salary unlocked!"); });
+                btnCareer.addActionListener(new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        triggerAction("Start Career", 0, 2, "Welcome to adulthood. Salary unlocked!");
+                    }
+                });
                 buttonRow.add(btnCareer);
             }
             JButton btnLoans   = makeIconButton("Pay Loans", new Color(220, 130, 130));
             JButton btnInvest  = makeIconButton("Invest 50%", new Color(130, 200, 150));
             JButton btnJewelry = makeIconButton("Buy Jewelry", new Color(200, 100, 100)); 
 
-            btnLoans.addActionListener(e -> { triggerAction("Pay Student Loans", 0, 3, "Paid a lump sum toward your education debt."); });
-            btnInvest.addActionListener(e -> { triggerAction("Invest 50%", 0, 4, "Allocating 50% of your cash into volatile assets."); });
-            btnJewelry.addActionListener(e -> { triggerAction("Buy Jewelry", 1, 1, "Drip acquired. +20 Happiness."); });
+            btnLoans.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    triggerAction("Pay Student Loans", 0, 3, "Paid a lump sum toward your education debt.");
+                }
+            });
+            btnInvest.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    triggerAction("Invest 50%", 0, 4, "Allocating 50% of your cash into volatile assets.");
+                }
+            });
+            btnJewelry.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    triggerAction("Buy Jewelry", 1, 1, "Drip acquired. +20 Happiness.");
+                }
+            });
 
             buttonRow.add(btnLoans);
             buttonRow.add(btnInvest);
@@ -182,10 +213,26 @@ public class GameGUI extends JFrame {
             JButton btnInvest = makeIconButton("Invest 50%", new Color(130, 200, 150));
             JButton btnCar    = makeIconButton("Buy Sports Car", new Color(200, 100, 100)); 
 
-            btnHouse.addActionListener(e -> { triggerAction("Buy House", 1, 2, "Down payment sent. You are officially a homeowner!"); });
-            btnKids.addActionListener(e -> { triggerAction("Have Kids", 1, 3, "Congratulations! Life just got much more expensive."); });
-            btnInvest.addActionListener(e -> { triggerAction("Invest 50%", 0, 4, "Allocating 50% of your cash into volatile assets."); });
-            btnCar.addActionListener(e -> { triggerAction("Buy Sports Car", 1, 4, "Vroom. Mid-life crisis managed. +40 Happiness."); });
+            btnHouse.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    triggerAction("Buy House", 1, 2, "Down payment sent. You are officially a homeowner!");
+                }
+            });
+            btnKids.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    triggerAction("Have Kids", 1, 3, "Congratulations! Life just got much more expensive.");
+                }
+            });
+            btnInvest.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    triggerAction("Invest 50%", 0, 4, "Allocating 50% of your cash into volatile assets.");
+                }
+            });
+            btnCar.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    triggerAction("Buy Sports Car", 1, 4, "Vroom. Mid-life crisis managed. +40 Happiness.");
+                }
+            });
 
             buttonRow.add(btnHouse);
             buttonRow.add(btnKids);
@@ -196,8 +243,16 @@ public class GameGUI extends JFrame {
             JButton btnRetire = makeIconButton("Max Retirement", new Color(180, 140, 220));
             JButton btnBoat   = makeIconButton("Buy Boat", new Color(200, 100, 100)); 
             
-            btnRetire.addActionListener(e -> { triggerAction("Max Retirement", 1, 4, "Shoveling maximum capital into senior accounts."); });
-            btnBoat.addActionListener(e -> { triggerAction("Buy Boat", 2, 1, "You bought a boat! +30 Happiness."); });
+            btnRetire.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    triggerAction("Max Retirement", 1, 4, "Shoveling maximum capital into senior accounts.");
+                }
+            });
+            btnBoat.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    triggerAction("Buy Boat", 2, 1, "You bought a boat! +30 Happiness.");
+                }
+            });
             
             buttonRow.add(btnRetire);
             buttonRow.add(btnBoat);
@@ -205,13 +260,10 @@ public class GameGUI extends JFrame {
 
         JLabel ageLabel = new JLabel(getLifeStageName(age), SwingConstants.CENTER);
         ageLabel.setForeground(new Color(180, 180, 220));
-        ageLabel.setFont(new Font("Serif", Font.ITALIC, 14));
+        ageLabel.setFont(new Font("Serif", Font.BOLD, 16));
 
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.gridx = 0; gbc.gridy = 0; gbc.insets = new Insets(10,0,4,0);
-        actionPanel.add(ageLabel, gbc);
-        gbc.gridy = 1;
-        actionPanel.add(buttonRow, gbc);
+        actionPanel.add(ageLabel, BorderLayout.NORTH);
+        actionPanel.add(buttonRow, BorderLayout.CENTER);
 
         actionPanel.revalidate();
         actionPanel.repaint();
@@ -220,26 +272,68 @@ public class GameGUI extends JFrame {
     private void triggerAction(String actionName, int row, int col, String message) {
         GameEngine.takeInstantAction(player, actionName);
         ImageIcon popupIcon = sliceIconFromSheet(row, col);
-        JOptionPane.showMessageDialog(this, message, actionName, JOptionPane.INFORMATION_MESSAGE, popupIcon);
+        
+        // Triggers our new pretty graphics engine!
+        showCustomPopup(actionName, message, popupIcon, true);
         refreshAll();
     }
 
     private ImageIcon sliceIconFromSheet(int row, int col) {
         if (masterSheet == null) return null;
         try {
-            int totalCols = 5, totalRows = 3;
+            int totalCols = 5;
+            int totalRows = 3;
             int boxW = masterSheet.getWidth() / totalCols;
             int boxH = masterSheet.getHeight() / totalRows;
-            int padX = (int)(boxW * 0.12), padY = (int)(boxH * 0.12);
 
-            BufferedImage cropped = masterSheet.getSubimage(
-                (col * boxW) + padX, (row * boxH) + padY, 
-                boxW - (2 * padX), boxH - (2 * padY)
-            );
+            int startX = col * boxW;
+            int startY = row * boxH;
+
+            BufferedImage cropped = masterSheet.getSubimage(startX, startY, boxW, boxH);
             return new ImageIcon(cropped.getScaledInstance(120, 120, Image.SCALE_SMOOTH));
         } catch (Exception ex) {
             return null;
         }
+    }
+
+    // --- THE NEW CUSTOM GRAPHICS ENGINE ---
+    private void showCustomPopup(String title, String message, ImageIcon icon, boolean isGoodNews) {
+        JDialog dialog = new JDialog(this, title, true);
+        dialog.setLayout(new BorderLayout());
+        dialog.getContentPane().setBackground(new Color(30, 30, 45)); 
+
+        JLabel imageLabel = new JLabel(icon);
+        imageLabel.setBorder(BorderFactory.createEmptyBorder(20, 20, 10, 20));
+
+        String colorHex = isGoodNews ? "#4CAF50" : "#E57373"; 
+        String htmlText = "<html><div style='text-align: center; width: 250px; font-family: sans-serif;'>"
+                        + "<h2 style='color: " + colorHex + "; margin-bottom: 5px;'>" + title + "</h2>"
+                        + "<p style='color: white; font-size: 14px;'>" + message + "</p>"
+                        + "</div></html>";
+        
+        JLabel textLabel = new JLabel(htmlText, SwingConstants.CENTER);
+        textLabel.setBorder(BorderFactory.createEmptyBorder(0, 20, 20, 20));
+
+        JButton closeBtn = makeIconButton("Continue", new Color(100, 100, 150));
+        closeBtn.setForeground(Color.WHITE);
+        closeBtn.setPreferredSize(new Dimension(150, 40));
+        closeBtn.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                dialog.dispose();
+            }
+        }); 
+
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.setBackground(new Color(30, 30, 45));
+        buttonPanel.add(closeBtn);
+
+        dialog.add(imageLabel, BorderLayout.NORTH);
+        dialog.add(textLabel, BorderLayout.CENTER);
+        dialog.add(buttonPanel, BorderLayout.SOUTH);
+
+        dialog.pack();
+        dialog.setLocationRelativeTo(this); 
+        dialog.setVisible(true); 
     }
 
     private String getLifeStageName(int age) {
@@ -331,6 +425,10 @@ public class GameGUI extends JFrame {
         if(name == null || name.trim().isEmpty()) name = "Player";
         
         String finalName = name;
-        SwingUtilities.invokeLater(() -> new GameGUI(finalName));
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                new GameGUI(finalName);
+            }
+        });
     }
 }
