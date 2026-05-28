@@ -13,12 +13,13 @@ public class GameGUI extends JFrame {
     private static final int    WINDOW_HEIGHT = 600;
     private static final String SHEET_PATH    = "assets/sheet.png"; 
 
-    private JLabel labelName;
     private JLabel labelAge;
-    private JLabel labelNetWorth;
     private JLabel labelCashFlow; 
     private JPanel actionPanel;
     private JPanel timeControlPanel; 
+    
+    private JProgressBar nwProgressBar;
+    private JProgressBar hapProgressBar;
 
     private Person player;
     private BufferedImage masterSheet;
@@ -55,22 +56,59 @@ public class GameGUI extends JFrame {
     }
 
     private JPanel buildStatsPanel() {
-        JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 8));
-        panel.setBorder(BorderFactory.createTitledBorder("Player Stats"));
+        JPanel panel = new JPanel(new GridLayout(3, 1, 5, 5));
+        panel.setBorder(BorderFactory.createTitledBorder(
+            BorderFactory.createLineBorder(Color.GRAY), "Player Dashboard: " + player.getName()
+        ));
         panel.setBackground(new Color(30, 30, 50));
 
-        labelName     = makeStatLabel("Name: "      + player.getName());
-        labelAge      = makeStatLabel("Age: "       + player.getAge());
-        labelNetWorth = makeStatLabel("Net Worth: $" + (int)player.getNetWorth());
+        // 1. Top Row: Age & Cash Flow (Text)
+        JPanel textRow = new JPanel(new FlowLayout(FlowLayout.CENTER, 30, 0));
+        textRow.setOpaque(false);
+        labelAge      = makeStatLabel("Age: " + player.getAge());
         labelCashFlow = makeStatLabel("Cash Flow: $" + (int)GameEngine.getAnnualCashFlow(player) + "/yr");
+        textRow.add(labelAge);
+        textRow.add(labelCashFlow);
 
-        panel.add(labelName);
-        panel.add(new JSeparator(SwingConstants.VERTICAL));
-        panel.add(labelAge);
-        panel.add(new JSeparator(SwingConstants.VERTICAL));
-        panel.add(labelNetWorth);
-        panel.add(new JSeparator(SwingConstants.VERTICAL));
-        panel.add(labelCashFlow);
+        // 2. Middle Row: The Net Worth Visualizer
+        JPanel nwRow = new JPanel(new BorderLayout(10, 0));
+        nwRow.setOpaque(false);
+        JLabel nwLabel = makeStatLabel("Net Worth:");
+        
+        JProgressBar nwBar = new JProgressBar(0, 2000000); 
+        nwBar.setValue((int)player.getNetWorth());
+        nwBar.setStringPainted(true);
+        nwBar.setString("$" + (int)player.getNetWorth() + " / $2,000,000");
+        nwBar.setForeground(new Color(46, 204, 113)); 
+        nwBar.setBackground(new Color(20, 20, 30));
+        nwBar.setPreferredSize(new Dimension(500, 25));
+        
+        nwRow.add(nwLabel, BorderLayout.WEST);
+        nwRow.add(nwBar, BorderLayout.CENTER);
+        
+        this.nwProgressBar = nwBar;   
+
+        // 3. Bottom Row: Happiness Visualizer
+        JPanel hapRow = new JPanel(new BorderLayout(10, 0));
+        hapRow.setOpaque(false);
+        JLabel hapLabel = makeStatLabel("Happiness:");
+        
+        JProgressBar hapBar = new JProgressBar(0, 100);
+        hapBar.setValue(player.getHappiness());
+        hapBar.setStringPainted(true);
+        hapBar.setString(player.getHappiness() + " / 100");
+        hapBar.setForeground(new Color(241, 196, 15)); 
+        hapBar.setBackground(new Color(20, 20, 30));
+        hapBar.setPreferredSize(new Dimension(500, 25));
+        
+        hapRow.add(hapLabel, BorderLayout.WEST);
+        hapRow.add(hapBar, BorderLayout.CENTER);
+        
+        this.hapProgressBar = hapBar; 
+
+        panel.add(textRow);
+        panel.add(nwRow);
+        panel.add(hapRow);
 
         return panel;
     }
@@ -273,7 +311,6 @@ public class GameGUI extends JFrame {
         GameEngine.takeInstantAction(player, actionName);
         ImageIcon popupIcon = sliceIconFromSheet(row, col);
         
-        // Triggers our new pretty graphics engine!
         showCustomPopup(actionName, message, popupIcon, true);
         refreshAll();
     }
@@ -296,7 +333,6 @@ public class GameGUI extends JFrame {
         }
     }
 
-    // --- THE NEW CUSTOM GRAPHICS ENGINE ---
     private void showCustomPopup(String title, String message, ImageIcon icon, boolean isGoodNews) {
         JDialog dialog = new JDialog(this, title, true);
         dialog.setLayout(new BorderLayout());
@@ -395,10 +431,14 @@ public class GameGUI extends JFrame {
     }
 
     public void refreshAll() {
-        labelName.setText("Name: " + player.getName());
         labelAge.setText("Age: " + player.getAge());
-        labelNetWorth.setText("Net Worth: $" + (int)player.getNetWorth());
         labelCashFlow.setText("Cash Flow: $" + (int)GameEngine.getAnnualCashFlow(player) + "/yr");
+        
+        nwProgressBar.setValue((int)player.getNetWorth());
+        nwProgressBar.setString("$" + (int)player.getNetWorth() + " / $2,000,000");
+        
+        hapProgressBar.setValue(player.getHappiness());
+        hapProgressBar.setString(player.getHappiness() + " / 100");
         
         if (player.getAge() >= 65) {
             showGameOverScreen();
