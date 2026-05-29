@@ -4,26 +4,23 @@ import java.util.List;
 public class Person {
     private String name;
     private int age = 16;
-    private double cash = 1000; 
+    private double cash = 1000;
     private double investments = 0;
     private int happiness = 60;
-    
-    // CAREER
-    private int careerTier = 0; // 0: Unemployed, 1: Part-Time, 2: Entry, 3: Mid, 4: Executive
+
+    private int careerTier = 0;
     private String careerPath = "Undeclared";
-    
-    // EDUCATION SYSTEM
-    private int educationLevel = 0; // 0: HS, 1: College Dropout, 2: Bachelors, 3: Masters, 4: PhD
+
+    private int educationLevel = 0;
     private boolean isEnrolled = false;
     private int yearsInDegree = 0;
-    private int grades = 75; // Out of 100
-    private String universityTier = "None"; // Community, State, Private, Elite
-    private int collegeApplicationCount = 0; // NEW: Tracks total applications
-    
-    // ASSET TIERS
-    private int houseTier = 0; // 0: Renting, 1: Starter ($50k), 2: Suburban ($150k), 3: Mansion ($1M)
-    private int carTier = 0;   // 0: Walk/Bus, 1: Beater ($3k), 2: Sedan ($15k), 3: SUV ($60k), 4: Supercar ($250k)
-    
+    private int grades = 75;
+    private String universityTier = "None";
+    private int collegeApplicationCount = 0;
+
+    private int houseTier = 0;
+    private int carTier = 0;
+
     private boolean hasKids = false;
     private List<String> history = new ArrayList<>();
 
@@ -32,18 +29,18 @@ public class Person {
     public String getName() { return name; }
     public int getAge() { return age; }
     public void addAge(int a) { this.age += a; }
-    
+
     public double getCash() { return cash; }
     public void addCash(double amount) { this.cash += amount; }
-    
+
     public double getInvestments() { return investments; }
     public void addInvestments(double amount) { this.investments += amount; }
-    
+
     public double getNetWorth() { return cash + investments; }
-    
+
     public int getHappiness() { return happiness; }
-    public void modifyHappiness(int amount) { 
-        this.happiness += amount; 
+    public void modifyHappiness(int amount) {
+        this.happiness += amount;
         if (this.happiness > 100) this.happiness = 100;
         if (this.happiness < 0) this.happiness = 0;
     }
@@ -72,8 +69,7 @@ public class Person {
     }
     public String getUniversityTier() { return universityTier; }
     public void setUniversityTier(String t) { this.universityTier = t; }
-    
-    // NEW GETTER AND SETTER FOR APPLICATIONS
+
     public int getCollegeApplicationCount() { return collegeApplicationCount; }
     public void incrementCollegeApplicationCount() { this.collegeApplicationCount++; }
 
@@ -81,7 +77,7 @@ public class Person {
     public void setHouseTier(int tier) { this.houseTier = tier; }
     public int getCarTier() { return carTier; }
     public void setCarTier(int tier) { this.carTier = tier; }
-    
+
     public boolean hasKids() { return hasKids; }
     public void setHasKids(boolean b) { this.hasKids = b; }
 

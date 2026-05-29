@@ -11,10 +11,10 @@ import java.util.List;
 public class GameGUI extends JFrame {
 
     private static final String WINDOW_TITLE  = "Life & Finance Simulator";
-    private static final int    WINDOW_WIDTH  = 1150; 
+    private static final int    WINDOW_WIDTH  = 1150;
     private static final int    WINDOW_HEIGHT = 750;
-    private static final String SHEET_PATH    = "assets/sheet.png"; 
-    
+    private static final String SHEET_PATH    = "assets/sheet.png";
+
     private static final Color BG_DARK = new Color(24, 26, 31);
     private static final Color PANEL_DARK = new Color(33, 37, 43);
     private static final Color COLOR_GOOD = new Color(152, 195, 121);
@@ -22,14 +22,14 @@ public class GameGUI extends JFrame {
     private static final Color COLOR_NEUTRAL = new Color(97, 175, 239);
 
     private JLabel labelAge;
-    private JLabel labelCashFlow; 
-    private JLabel labelNetWorthText; 
-    private JLabel labelHappinessText; 
-    private JLabel labelCareerText; 
-    private JLabel labelAssetText; 
+    private JLabel labelCashFlow;
+    private JLabel labelNetWorthText;
+    private JLabel labelHappinessText;
+    private JLabel labelCareerText;
+    private JLabel labelAssetText;
     private JPanel actionPanel;
-    private JPanel timeControlPanel; 
-    private JTextPane lifeFeed; 
+    private JPanel timeControlPanel;
+    private JTextPane lifeFeed;
     private ModernProgressBar nwProgressBar;
     private ModernProgressBar hapProgressBar;
 
@@ -45,18 +45,18 @@ public class GameGUI extends JFrame {
         try {
             File file = new File(SHEET_PATH);
             if (file.exists()) masterSheet = ImageIO.read(file);
-        } catch (Exception e) { System.out.println("Warning: Missing sheet.png"); }
+        } catch (Exception e) {}
 
         setTitle(WINDOW_TITLE);
         setSize(WINDOW_WIDTH, WINDOW_HEIGHT);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLocationRelativeTo(null); 
+        setLocationRelativeTo(null);
         getContentPane().setBackground(BG_DARK);
 
-        setupAnimationEngine(); 
+        setupAnimationEngine();
         buildFrame();
         updateActionPanel(player.getAge());
-        
+
         logEvent("Simulation Started", "Welcome to the world, " + player.getName() + "!", null, COLOR_NEUTRAL);
         setVisible(true);
     }
@@ -84,8 +84,8 @@ public class GameGUI extends JFrame {
         animTimer = new Timer(16, e -> {
             boolean needsRepaint = false;
             for (FloatingText ft : animations) {
-                ft.y -= 2; 
-                ft.alpha -= 0.02f; 
+                ft.y -= 2;
+                ft.alpha -= 0.02f;
                 if (ft.alpha <= 0) animations.remove(ft);
                 needsRepaint = true;
             }
@@ -109,22 +109,22 @@ public class GameGUI extends JFrame {
 
     private void buildFrame() {
         setLayout(new BorderLayout(15, 15));
-        
+
         JPanel rootPanel = new JPanel(new BorderLayout(15, 15));
         rootPanel.setBackground(BG_DARK);
         rootPanel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
-        
+
         JPanel leftPanel = new JPanel(new BorderLayout(15, 15));
         leftPanel.setOpaque(false);
         leftPanel.add(buildStatsPanel(), BorderLayout.NORTH);
         leftPanel.add(buildActionPanelShell(), BorderLayout.CENTER);
-        
+
         timeControlPanel = buildTimeControlPanel();
         leftPanel.add(timeControlPanel, BorderLayout.SOUTH);
-        
+
         rootPanel.add(leftPanel, BorderLayout.CENTER);
-        rootPanel.add(buildFeedPanel(), BorderLayout.EAST); 
-        
+        rootPanel.add(buildFeedPanel(), BorderLayout.EAST);
+
         add(rootPanel);
     }
 
@@ -136,17 +136,17 @@ public class GameGUI extends JFrame {
         feedBorder.setTitleColor(Color.WHITE);
         feedContainer.setBorder(feedBorder);
         feedContainer.setBackground(PANEL_DARK);
-        feedContainer.setPreferredSize(new Dimension(350, 0)); 
+        feedContainer.setPreferredSize(new Dimension(350, 0));
 
         lifeFeed = new JTextPane();
         lifeFeed.setEditable(false);
-        lifeFeed.setBackground(BG_DARK); 
+        lifeFeed.setBackground(BG_DARK);
         lifeFeed.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         JScrollPane scrollPane = new JScrollPane(lifeFeed);
-        scrollPane.setBorder(null); 
+        scrollPane.setBorder(null);
         scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-        
+
         feedContainer.add(scrollPane, BorderLayout.CENTER);
         return feedContainer;
     }
@@ -160,26 +160,26 @@ public class GameGUI extends JFrame {
             StyleConstants.setFontFamily(titleStyle, "SansSerif");
             StyleConstants.setFontSize(titleStyle, 16);
             doc.insertString(doc.getLength(), title + "\n", titleStyle);
-            
+
             if (icon != null) {
                 Image img = icon.getImage().getScaledInstance(40, 40, Image.SCALE_SMOOTH);
                 lifeFeed.setCaretPosition(doc.getLength());
                 lifeFeed.insertIcon(new ImageIcon(img));
-                doc.insertString(doc.getLength(), "  ", null); 
+                doc.insertString(doc.getLength(), "  ", null);
             }
-            
+
             SimpleAttributeSet textStyle = new SimpleAttributeSet();
             StyleConstants.setForeground(textStyle, new Color(171, 178, 191));
             StyleConstants.setFontFamily(textStyle, "SansSerif");
             StyleConstants.setFontSize(textStyle, 14);
             doc.insertString(doc.getLength(), message + "\n\n", textStyle);
-            
+
             lifeFeed.setCaretPosition(doc.getLength());
-        } catch (Exception e) { System.out.println("Error writing to life feed."); }
+        } catch (Exception e) {}
     }
 
     private JPanel buildStatsPanel() {
-        JPanel panel = new JPanel(new GridLayout(5, 1, 5, 5)); 
+        JPanel panel = new JPanel(new GridLayout(5, 1, 5, 5));
         TitledBorder dashBorder = BorderFactory.createTitledBorder(
             BorderFactory.createLineBorder(new Color(171, 178, 191)), "Player Dashboard: " + player.getName()
         );
@@ -199,17 +199,17 @@ public class GameGUI extends JFrame {
         labelCareerText = makeStatLabel(getCareerDisplay());
         labelCareerText.setForeground(COLOR_NEUTRAL);
         careerRow.add(labelCareerText);
-        
+
         JPanel assetRow = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
         assetRow.setOpaque(false);
         labelAssetText = makeStatLabel(getAssetDisplay());
-        labelAssetText.setForeground(new Color(198, 120, 221)); 
+        labelAssetText.setForeground(new Color(198, 120, 221));
         assetRow.add(labelAssetText);
 
         JPanel nwRow = new JPanel(new BorderLayout(15, 0));
         nwRow.setOpaque(false);
         labelNetWorthText = makeStatLabel("Net Worth: $" + (int)player.getNetWorth());
-        nwProgressBar = new ModernProgressBar(0, 10000, COLOR_GOOD); 
+        nwProgressBar = new ModernProgressBar(0, 10000, COLOR_GOOD);
         nwProgressBar.setValue((int)player.getNetWorth());
         nwProgressBar.setPreferredSize(new Dimension(400, 20));
         nwRow.add(labelNetWorthText, BorderLayout.WEST);
@@ -232,18 +232,18 @@ public class GameGUI extends JFrame {
 
         return panel;
     }
-    
+
     private String getCareerDisplay() {
         if (player.getCareerTier() == 0) return "Career: Unemployed";
         if (player.getCareerTier() == 1) return "Career: Part-Time Job";
-        
+
         String tierString = "Entry-Level";
         if (player.getCareerTier() == 3) tierString = "Mid-Level";
         if (player.getCareerTier() >= 4) tierString = "Executive";
-        
+
         return "Career: " + tierString + " in " + player.getCareerPath();
     }
-    
+
     private String getAssetDisplay() {
         String ed = "HS Diploma";
         if (player.isEnrolled()) ed = "In College";
@@ -251,18 +251,18 @@ public class GameGUI extends JFrame {
         else if (player.getEducationLevel() == 2) ed = "Bachelor's";
         else if (player.getEducationLevel() == 3) ed = "Master's";
         else if (player.getEducationLevel() >= 4) ed = "PhD";
-        
+
         String car = "No Car";
         if (player.getCarTier() == 1) car = "Beater";
         else if (player.getCarTier() == 2) car = "Sedan";
         else if (player.getCarTier() == 3) car = "SUV";
         else if (player.getCarTier() >= 4) car = "Supercar";
-        
+
         String house = "Renting";
         if (player.getHouseTier() == 1) house = "Starter Home";
         else if (player.getHouseTier() == 2) house = "Suburban House";
         else if (player.getHouseTier() >= 3) house = "Mansion";
-        
+
         return "[" + ed + "]  |  [" + car + "]  |  [" + house + "]";
     }
 
@@ -274,7 +274,7 @@ public class GameGUI extends JFrame {
     }
 
     private JPanel buildActionPanelShell() {
-        actionPanel = new JPanel(new BorderLayout()); 
+        actionPanel = new JPanel(new BorderLayout());
         TitledBorder actionBorder = BorderFactory.createTitledBorder(
             BorderFactory.createLineBorder(new Color(171, 178, 191)), "Actions & Choices"
         );
@@ -313,54 +313,61 @@ public class GameGUI extends JFrame {
 
     private void handleTimelineEvent(String msg) {
         if (msg == null) return;
-        int row = 0, col = 3; 
-        boolean isGoodNews = false; 
+        int row = 0, col = 3;
+        boolean isGoodNews = false;
 
         if (msg.contains("WINDFALL")) {
             isGoodNews = true;
-            if (msg.contains("bonus")) { row = 0; col = 0; } 
-            else if (msg.contains("Market") || msg.contains("Portfolio")) { row = 0; col = 4; } 
+            if (msg.contains("bonus")) { row = 0; col = 0; }
+            else if (msg.contains("Market") || msg.contains("Portfolio")) { row = 0; col = 4; }
             spawnAnimation("+$ WINDFALL!", COLOR_GOOD);
         } else {
-            if (msg.contains("market") || msg.contains("correction")) { row = 1; col = 4; } 
-            else if (msg.contains("career") || msg.contains("downsizing")) { row = 0; col = 2; } 
+            if (msg.contains("market") || msg.contains("correction")) { row = 1; col = 4; }
+            else if (msg.contains("career") || msg.contains("downsizing")) { row = 0; col = 2; }
             spawnAnimation("-$ EMERGENCY!", COLOR_BAD);
         }
 
         String title = isGoodNews ? "WINDFALL EVENT" : "CRITICAL EVENT";
         Color headerColor = isGoodNews ? COLOR_GOOD : COLOR_BAD;
-        
+
         logEvent(title, msg, sliceIconFromSheet(row, col), headerColor);
     }
 
     public void updateActionPanel(int age) {
         actionPanel.removeAll();
-        
+
         JPanel buttonRow = new JPanel(new GridLayout(0, 3, 15, 15));
         buttonRow.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
         buttonRow.setOpaque(false);
 
-        // ALWAYS SHOW ASSET UPGRADES BASED ON TIER
         addDynamicAssetButtons(buttonRow);
 
-        // EDUCATION LOOP
         if (player.isEnrolled()) {
             JButton btnStudy = makeIconButton("Study Hard", COLOR_NEUTRAL);
             btnStudy.addActionListener(e -> { spawnAnimation("+ Grades", COLOR_GOOD); triggerAction("Study Hard", 0, 1, "Hitting the books."); });
-            
+
             JButton btnParty = makeIconButton("Party", new Color(198, 120, 221));
             btnParty.addActionListener(e -> { spawnAnimation("- Grades", COLOR_BAD); triggerAction("Party", 1, 1, "Going out with friends."); });
-            
+
             JButton btnDrop = makeIconButton("Drop Out", COLOR_BAD);
             btnDrop.addActionListener(e -> { spawnAnimation("- Education Stopped", COLOR_BAD); triggerAction("Drop Out", 1, 3, "Left school early."); });
-            
+
             buttonRow.add(btnStudy);
             buttonRow.add(btnParty);
             buttonRow.add(btnDrop);
-            
+
         } else {
-            // APPLY TO SCHOOL BUTTONS
-            if (age >= 18 && player.getEducationLevel() == 0) {
+            if (!player.hasCareer()) {
+                JButton btnCareer = makeIconButton("Find Career", new Color(229, 192, 123));
+                btnCareer.addActionListener(e -> showCareerSelectionPopup());
+                buttonRow.add(btnCareer);
+            } else if (player.getCareerTier() < 4) {
+                JButton btnPromote = makeIconButton("Seek Promotion", COLOR_GOOD);
+                btnPromote.addActionListener(e -> handlePromotionAttempt());
+                buttonRow.add(btnPromote);
+            }
+
+            if (player.getEducationLevel() == 0 || player.getEducationLevel() == 1) {
                 JButton btnApply = makeIconButton("Apply to College", COLOR_NEUTRAL);
                 btnApply.addActionListener(e -> showCollegeApplicationPopup());
                 buttonRow.add(btnApply);
@@ -374,22 +381,10 @@ public class GameGUI extends JFrame {
                 buttonRow.add(btnApply);
             }
 
-            // CAREER BUTTONS
-            if (age >= 22 && player.getCareerTier() == 0) {
-                JButton btnEmergencyJob = makeIconButton("Find Career", new Color(229, 192, 123));
-                btnEmergencyJob.addActionListener(e -> showCareerSelectionPopup());
-                buttonRow.add(btnEmergencyJob);
-            } else if (player.hasCareer() && player.getCareerTier() < 4) {
-                JButton btnPromote = makeIconButton("Seek Promotion", COLOR_GOOD);
-                btnPromote.addActionListener(e -> handlePromotionAttempt());
-                buttonRow.add(btnPromote);
-            }
-
-            // GENERAL BUTTONS
             JButton btnInvest = makeIconButton("Invest 50%", COLOR_GOOD);
             btnInvest.addActionListener(e -> { spawnAnimation("-50% Cash Invested", COLOR_GOOD); triggerAction("Invest 50%", 0, 4, "Aggressive early saving."); });
             buttonRow.add(btnInvest);
-            
+
             if (!player.hasKids() && age >= 25) {
                 JButton btnKids = makeIconButton("Have Kids", new Color(198, 120, 221));
                 btnKids.addActionListener(e -> { spawnAnimation("- Cash, + Family", new Color(198, 120, 221)); triggerAction("Have Kids", 1, 3, "Your expenses skyrocketed."); });
@@ -397,43 +392,39 @@ public class GameGUI extends JFrame {
             }
         }
 
-        // EARLY LIFE CHOICES (16-22)
-        if (age >= 16 && age <= 22) {
-            if (player.getCareerTier() == 0) {
-                JButton btnJob = makeIconButton("Part-Time Job", COLOR_GOOD);
-                btnJob.addActionListener(e -> {
-                    spawnAnimation("+ Minimum Wage", COLOR_GOOD);
-                    triggerAction("Get Part-Time Job", 0, 0, "Flipping burgers for minimum wage.");
-                });
-                buttonRow.add(btnJob);
-            }
-            
-            if (age <= 18 || (age > 18 && player.getCareerTier() <= 1)) {
-                JButton btnInvestEarly = makeIconButton("Invest ($1k)", COLOR_NEUTRAL);
-                btnInvestEarly.addActionListener(e -> {
-                    spawnAnimation("-$1,000 Invested", COLOR_NEUTRAL);
-                    triggerAction("Invest $1,000", 0, 4, "Planting seeds for compound interest.");
-                });
-                buttonRow.add(btnInvestEarly);
-            }
+        if (player.getCareerTier() <= 1 && !player.hasCareer()) {
+             JButton btnJob = makeIconButton("Part-Time Job", COLOR_GOOD);
+             btnJob.addActionListener(e -> {
+                 spawnAnimation("+ Minimum Wage", COLOR_GOOD);
+                 triggerAction("Get Part-Time Job", 0, 0, "Flipping burgers for minimum wage.");
+             });
+             buttonRow.add(btnJob);
+        }
 
-            // College Years specific (19-22)
-            if (age >= 19) {
-                JButton btnLoan = makeIconButton("Loans (+$20k)", COLOR_BAD);
-                btnLoan.addActionListener(e -> {
-                    spawnAnimation("+$20,000 Cash / Debt", COLOR_BAD);
-                    triggerAction("Take Student Loans", 0, 3, "Debt acquired to pay for textbooks.");
+        if (age <= 18 || (age > 18 && player.getCareerTier() <= 1)) {
+            JButton btnInvestEarly = makeIconButton("Invest ($1k)", COLOR_NEUTRAL);
+            btnInvestEarly.addActionListener(e -> {
+                spawnAnimation("-$1,000 Invested", COLOR_NEUTRAL);
+                triggerAction("Invest $1,000", 0, 4, "Planting seeds for compound interest.");
+            });
+            buttonRow.add(btnInvestEarly);
+        }
+
+        if (age >= 19 && age <= 25) {
+            JButton btnLoan = makeIconButton("Loans (+$20k)", COLOR_BAD);
+            btnLoan.addActionListener(e -> {
+                spawnAnimation("+$20,000 Cash / Debt", COLOR_BAD);
+                triggerAction("Take Student Loans", 0, 3, "Debt acquired to pay for textbooks.");
+            });
+            buttonRow.add(btnLoan);
+
+            if (player.isEnrolled()) {
+                JButton btnIntern = makeIconButton("Paid Internship", COLOR_GOOD);
+                btnIntern.addActionListener(e -> {
+                    spawnAnimation("+$5,000", COLOR_GOOD);
+                    triggerAction("Paid Internship", 0, 2, "Looks great on a resume.");
                 });
-                buttonRow.add(btnLoan);
-                
-                if (player.isEnrolled()) {
-                    JButton btnIntern = makeIconButton("Paid Internship", COLOR_GOOD);
-                    btnIntern.addActionListener(e -> {
-                        spawnAnimation("+$5,000", COLOR_GOOD);
-                        triggerAction("Paid Internship", 0, 2, "Looks great on a resume.");
-                    });
-                    buttonRow.add(btnIntern);
-                }
+                buttonRow.add(btnIntern);
             }
         }
 
@@ -446,7 +437,7 @@ public class GameGUI extends JFrame {
         actionPanel.revalidate();
         actionPanel.repaint();
     }
-    
+
     private void addDynamicAssetButtons(JPanel buttonRow) {
         if (player.getCarTier() == 0) {
             JButton btn = makeIconButton("Buy Beater ($3k)", COLOR_BAD);
@@ -465,7 +456,7 @@ public class GameGUI extends JFrame {
             btn.addActionListener(e -> handleAssetPurchase(250000, "Buy Supercar", 4, true));
             buttonRow.add(btn);
         }
-        
+
         if (player.getHouseTier() == 0) {
             JButton btn = makeIconButton("Starter Home ($50k)", new Color(229, 192, 123));
             btn.addActionListener(e -> handleAssetPurchase(50000, "Buy Starter Home", 1, false));
@@ -480,7 +471,7 @@ public class GameGUI extends JFrame {
             buttonRow.add(btn);
         }
     }
-    
+
     private void handleAssetPurchase(int cost, String name, int tier, boolean isCar) {
         if (player.getCash() >= cost) {
             player.addCash(-cost);
@@ -496,7 +487,6 @@ public class GameGUI extends JFrame {
     }
 
     private void showCollegeApplicationPopup() {
-        // NEW: Check application limit before allowing them to apply
         if (player.getCollegeApplicationCount() >= 15) {
             spawnAnimation("- Limit Reached!", COLOR_BAD);
             logEvent("Application Denied", "You have already applied to college the maximum of 15 times.", sliceIconFromSheet(1, 3), COLOR_BAD);
@@ -504,22 +494,22 @@ public class GameGUI extends JFrame {
         }
 
         String[] paths = {"Community College (100%)", "State University (65%)", "Private University (25%)", "Elite Ivy League (5%)"};
-        String choice = (String) JOptionPane.showInputDialog(this, 
-            "Select where to apply (Acceptance based on Grades):", "College Application", 
+        String choice = (String) JOptionPane.showInputDialog(this,
+            "Select where to apply (Acceptance based on Grades):", "College Application",
             JOptionPane.QUESTION_MESSAGE, null, paths, paths[0]);
-            
+
         if (choice != null) {
-            player.incrementCollegeApplicationCount(); // NEW: Increment their application count
-            
+            player.incrementCollegeApplicationCount();
+
             int grades = player.getGrades();
             boolean accepted = false;
             String tierName = "";
-            
+
             if (choice.contains("Community")) { accepted = true; tierName = "Community"; }
             else if (choice.contains("State") && grades >= 60) { accepted = (Math.random() < 0.65); tierName = "State"; }
             else if (choice.contains("Private") && grades >= 80) { accepted = (Math.random() < 0.25); tierName = "Private"; }
             else if (choice.contains("Elite") && grades >= 95) { accepted = (Math.random() < 0.05); tierName = "Elite"; }
-            
+
             if (accepted) {
                 player.setEnrolled(true);
                 player.setUniversityTier(tierName);
@@ -535,13 +525,13 @@ public class GameGUI extends JFrame {
 
     private void showCareerSelectionPopup() {
         String[] paths = {"Technology", "Healthcare", "Finance", "Trades"};
-        String choice = (String) JOptionPane.showInputDialog(this, 
-            "Select your professional industry:", "Career Path Selection", 
+        String choice = (String) JOptionPane.showInputDialog(this,
+            "Select your professional industry:", "Career Path Selection",
             JOptionPane.QUESTION_MESSAGE, null, paths, paths[0]);
-            
+
         if (choice != null) {
             player.setCareerPath(choice);
-            player.setCareerTier(2); 
+            player.setCareerTier(2);
             spawnAnimation("+ Salary Unlocked", COLOR_GOOD);
             logEvent("Career Started", "You accepted an Entry-Level position in " + choice + ".", sliceIconFromSheet(0, 2), COLOR_NEUTRAL);
             refreshAll();
@@ -588,11 +578,9 @@ public class GameGUI extends JFrame {
         } catch (Exception ex) { return null; }
     }
 
-    
-
     private void showGameOverScreen() {
         actionPanel.removeAll();
-        timeControlPanel.setVisible(false); 
+        timeControlPanel.setVisible(false);
 
         double nw = player.getNetWorth();
         String title = "In Debt";
@@ -611,14 +599,14 @@ public class GameGUI extends JFrame {
         summary.add(makeGameOverLabel(String.format("Final Net Worth: $%,d", (int)nw), COLOR_GOOD, 22));
         summary.add(Box.createVerticalStrut(10));
         summary.add(makeGameOverLabel("Retirement Rank: " + title, COLOR_NEUTRAL, 18));
-        
+
         actionPanel.add(summary, BorderLayout.CENTER);
         actionPanel.revalidate();
         actionPanel.repaint();
-        
+
         logEvent("RETIREMENT REACHED", "Final Rank: " + title + " | Net Worth: $" + (int)nw, null, COLOR_GOOD);
     }
-    
+
     private JLabel makeGameOverLabel(String text, Color c, int size) {
         JLabel l = new JLabel(text);
         l.setForeground(c);
@@ -632,21 +620,21 @@ public class GameGUI extends JFrame {
         labelCashFlow.setText("Cash Flow: $" + (int)GameEngine.getAnnualCashFlow(player) + "/yr");
         labelCareerText.setText(getCareerDisplay());
         labelAssetText.setText(getAssetDisplay());
-        
+
         int currentNW = (int)player.getNetWorth();
         int nextMilestone = 10000;
         if (currentNW > 10000) nextMilestone = 100000;
         if (currentNW > 100000) nextMilestone = 1000000;
         if (currentNW > 1000000) nextMilestone = 5000000;
-        if (currentNW > 5000000) nextMilestone = 25000000; 
-        
+        if (currentNW > 5000000) nextMilestone = 25000000;
+
         nwProgressBar.setMaximum(nextMilestone);
-        nwProgressBar.setValue(Math.max(0, currentNW)); 
+        nwProgressBar.setValue(Math.max(0, currentNW));
         labelNetWorthText.setText(String.format("Net Worth: $%,d / $%,d", currentNW, nextMilestone));
-        
+
         hapProgressBar.setValue(player.getHappiness());
         labelHappinessText.setText("Happiness: " + player.getHappiness() + " / 100");
-        
+
         if (player.getAge() >= 65) showGameOverScreen();
         else updateActionPanel(player.getAge());
     }
@@ -657,24 +645,24 @@ public class GameGUI extends JFrame {
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                
+
                 g2.setColor(new Color(0, 0, 0, 80));
                 g2.fillRoundRect(2, 4, getWidth()-4, getHeight()-4, 15, 15);
-                
+
                 if (getModel().isRollover()) g2.setColor(bgColor.brighter());
                 else g2.setColor(bgColor);
                 g2.fillRoundRect(0, 0, getWidth()-4, getHeight()-4, 15, 15);
-                
-                super.paintComponent(g); 
+
+                super.paintComponent(g);
                 g2.dispose();
             }
-        }; 
+        };
         button.setContentAreaFilled(false);
         button.setFocusPainted(false);
         button.setBorderPainted(false);
-        button.setForeground(Color.BLACK); 
-        button.setFont(new Font("SansSerif", Font.BOLD, 14)); 
-        button.setPreferredSize(new Dimension(170, 50)); 
+        button.setForeground(Color.BLACK);
+        button.setFont(new Font("SansSerif", Font.BOLD, 14));
+        button.setPreferredSize(new Dimension(170, 50));
         button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         return button;
     }
@@ -691,10 +679,10 @@ public class GameGUI extends JFrame {
         protected void paintComponent(Graphics g) {
             Graphics2D g2 = (Graphics2D) g.create();
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            
-            g2.setColor(new Color(15, 15, 25)); 
+
+            g2.setColor(new Color(15, 15, 25));
             g2.fillRoundRect(0, 0, getWidth(), getHeight(), 20, 20);
-            
+
             int fillWidth = (int) (getWidth() * getPercentComplete());
             if (fillWidth > 0) {
                 GradientPaint gp = new GradientPaint(0, 0, barColor.darker(), fillWidth, 0, barColor.brighter().brighter());

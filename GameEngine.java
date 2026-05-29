@@ -4,13 +4,13 @@ public class GameEngine {
     private static Random rand = new Random();
 
     public static void applyCompoundInterest(Person p) {
-        double interest = p.getCash() * 0.05; 
+        double interest = p.getCash() * 0.05;
         p.addCash(interest);
     }
 
     public static void simulateMarketYear(Person p) {
         if (p.getInvestments() > 0) {
-            double marketReturn = (rand.nextGaussian() * 0.15) + 0.09; 
+            double marketReturn = (rand.nextGaussian() * 0.15) + 0.09;
             double profitOrLoss = p.getInvestments() * marketReturn;
             p.addInvestments(profitOrLoss);
         }
@@ -23,12 +23,10 @@ public class GameEngine {
         boolean oldCareer = p.hasCareer();
 
         p.addCash(getAnnualCashFlow(p));
-        
-        // Handle Schooling progression
+
         if (p.isEnrolled()) {
             p.addYearInDegree();
-            p.modifyHappiness(-5); // School is stressful
-            // Check for graduation!
+            p.modifyHappiness(-5);
             if (p.getYearsInDegree() >= 4) {
                 p.setEnrolled(false);
                 p.resetYearsInDegree();
@@ -66,7 +64,7 @@ public class GameEngine {
                         break;
                     case 2:
                         if (p.hasCareer()) {
-                            p.setCareerTier(0); 
+                            p.setCareerTier(0);
                             p.modifyHappiness(-30);
                             return "EMERGENCY: Corporate downsizing. You were laid off!";
                         }
@@ -105,7 +103,7 @@ public class GameEngine {
                 }
             }
         }
-        return null; 
+        return null;
     }
 
     public static String simulateTenYears(Person p) {
@@ -113,24 +111,23 @@ public class GameEngine {
         for (int i = 0; i < 10; i++) {
             if (p.getAge() >= 65) break;
             String result = simulateOneYear(p);
-            if (result != null) latestNotification = result; 
+            if (result != null) latestNotification = result;
         }
         return latestNotification;
     }
 
     public static double getAnnualCashFlow(Person p) {
         double flow = 0;
-        
+
         double uniMultiplier = 1.0;
         if (p.getUniversityTier().equals("Private")) uniMultiplier = 1.15;
         if (p.getUniversityTier().equals("Elite")) uniMultiplier = 1.35;
 
-        if (p.getCareerTier() == 1) flow += 15000; 
-        else if (p.getCareerTier() == 2) flow += (50000 * uniMultiplier); 
-        else if (p.getCareerTier() == 3) flow += (85000 * uniMultiplier); 
-        else if (p.getCareerTier() == 4) flow += (140000 * uniMultiplier); 
+        if (p.getCareerTier() == 1) flow += 15000;
+        else if (p.getCareerTier() == 2) flow += (50000 * uniMultiplier);
+        else if (p.getCareerTier() == 3) flow += (85000 * uniMultiplier);
+        else if (p.getCareerTier() == 4) flow += (140000 * uniMultiplier);
 
-        // Tuition Costs
         if (p.isEnrolled()) {
             if (p.getUniversityTier().equals("Community")) flow -= 5000;
             else if (p.getUniversityTier().equals("State")) flow -= 15000;
@@ -138,14 +135,13 @@ public class GameEngine {
             else if (p.getUniversityTier().equals("Elite")) flow -= 60000;
         }
 
-        if (p.getAge() >= 22 && !p.isEnrolled()) flow -= 25000; 
-        
-        // Asset Upkeep Costs
+        if (p.getAge() >= 22 && !p.isEnrolled()) flow -= 25000;
+
         if (p.getHouseTier() == 1) flow -= 12000;
         else if (p.getHouseTier() == 2) flow -= 24000;
         else if (p.getHouseTier() == 3) flow -= 60000;
 
-        if (p.hasKids()) flow -= 18000; 
+        if (p.hasKids()) flow -= 18000;
 
         return flow;
     }
@@ -162,26 +158,25 @@ public class GameEngine {
                 return true;
             case "Drop Out":
                 p.setEnrolled(false);
-                p.setEducationLevel(1); // Drop out status
+                p.setEducationLevel(1);
                 p.resetYearsInDegree();
                 return true;
             case "Take Student Loans":
-                p.addCash(20000); 
-                p.addInvestments(-25000); 
+                p.addCash(20000);
+                p.addInvestments(-25000);
                 return true;
             case "Get Part-Time Job":
                 p.setCareerTier(1);
                 return true;
             case "Seek Promotion":
                 if (p.getCareerTier() >= 4) return false;
-                
-                // EDUCATION GATEKEEPER
-                if (p.getCareerTier() == 2 && p.getEducationLevel() < 2) return false; // Need Bachelors for Mid-Level
-                if (p.getCareerTier() == 3 && p.getEducationLevel() < 3) return false; // Need Masters for Exec
-                
-                if (rand.nextDouble() > 0.4) { 
+
+                if (p.getCareerTier() == 2 && p.getEducationLevel() < 2) return false;
+                if (p.getCareerTier() == 3 && p.getEducationLevel() < 3) return false;
+
+                if (rand.nextDouble() > 0.4) {
                     p.setCareerTier(p.getCareerTier() + 1);
-                    p.modifyHappiness(-10); 
+                    p.modifyHappiness(-10);
                     return true;
                 } else {
                     p.modifyHappiness(-15);

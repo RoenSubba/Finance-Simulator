@@ -1,15 +1,13 @@
 public class LifeEvent {
-    // Instance variables
     private String eventName;
     private double financialImpact; // Negative means it costs money, positive means you gain money
 
-    // Constructor
+    
     public LifeEvent(String name, double impact) {
         this.eventName = name;
         this.financialImpact = impact;
     }
 
-    // Getters
     public String getEventName() {
         return eventName;
     }
@@ -18,10 +16,9 @@ public class LifeEvent {
         return financialImpact;
     }
 
-    // Static method to generate a random event
-    // Static means we can call it without creating a blank LifeEvent first!
+    
     public static LifeEvent generateRandomEvent() {
-        // Generates a random integer from 0 to 4
+        
         int randomNum = (int) (Math.random() * 5); 
 
         if (randomNum == 0) {
