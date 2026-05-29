@@ -399,7 +399,6 @@ public class GameGUI extends JFrame {
 
         // EARLY LIFE CHOICES (16-22)
         if (age >= 16 && age <= 22) {
-            // FIX: Keep Part-Time Job available until they get a real career
             if (player.getCareerTier() == 0) {
                 JButton btnJob = makeIconButton("Part-Time Job", COLOR_GOOD);
                 btnJob.addActionListener(e -> {
@@ -409,7 +408,6 @@ public class GameGUI extends JFrame {
                 buttonRow.add(btnJob);
             }
             
-            // Only show Invest early if they aren't already aggressively investing 50%
             if (age <= 18 || (age > 18 && player.getCareerTier() <= 1)) {
                 JButton btnInvestEarly = makeIconButton("Invest ($1k)", COLOR_NEUTRAL);
                 btnInvestEarly.addActionListener(e -> {
@@ -439,7 +437,7 @@ public class GameGUI extends JFrame {
             }
         }
 
-        JLabel phaseLabel = new JLabel("Grades: " + player.getGrades() + "/100", SwingConstants.CENTER);
+        JLabel phaseLabel = new JLabel("Grades: " + player.getGrades() + "/100 | Apps Sent: " + player.getCollegeApplicationCount() + "/15", SwingConstants.CENTER);
         phaseLabel.setForeground(new Color(171, 178, 191));
         phaseLabel.setFont(new Font("Serif", Font.ITALIC, 18));
 
@@ -498,12 +496,21 @@ public class GameGUI extends JFrame {
     }
 
     private void showCollegeApplicationPopup() {
+        // NEW: Check application limit before allowing them to apply
+        if (player.getCollegeApplicationCount() >= 15) {
+            spawnAnimation("- Limit Reached!", COLOR_BAD);
+            logEvent("Application Denied", "You have already applied to college the maximum of 15 times.", sliceIconFromSheet(1, 3), COLOR_BAD);
+            return;
+        }
+
         String[] paths = {"Community College (100%)", "State University (65%)", "Private University (25%)", "Elite Ivy League (5%)"};
         String choice = (String) JOptionPane.showInputDialog(this, 
             "Select where to apply (Acceptance based on Grades):", "College Application", 
             JOptionPane.QUESTION_MESSAGE, null, paths, paths[0]);
             
         if (choice != null) {
+            player.incrementCollegeApplicationCount(); // NEW: Increment their application count
+            
             int grades = player.getGrades();
             boolean accepted = false;
             String tierName = "";

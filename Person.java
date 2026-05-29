@@ -8,16 +8,21 @@ public class Person {
     private double investments = 0;
     private int happiness = 60;
     
-    private int careerTier = 0; 
+    // CAREER
+    private int careerTier = 0; // 0: Unemployed, 1: Part-Time, 2: Entry, 3: Mid, 4: Executive
     private String careerPath = "Undeclared";
     
-    private int educationLevel = 0; 
+    // EDUCATION SYSTEM
+    private int educationLevel = 0; // 0: HS, 1: College Dropout, 2: Bachelors, 3: Masters, 4: PhD
     private boolean isEnrolled = false;
     private int yearsInDegree = 0;
-    private int grades = 75; 
-    private String universityTier = "None";
-    private int houseTier = 0; 
-    private int carTier = 0;  
+    private int grades = 75; // Out of 100
+    private String universityTier = "None"; // Community, State, Private, Elite
+    private int collegeApplicationCount = 0; // NEW: Tracks total applications
+    
+    // ASSET TIERS
+    private int houseTier = 0; // 0: Renting, 1: Starter ($50k), 2: Suburban ($150k), 3: Mansion ($1M)
+    private int carTier = 0;   // 0: Walk/Bus, 1: Beater ($3k), 2: Sedan ($15k), 3: SUV ($60k), 4: Supercar ($250k)
     
     private boolean hasKids = false;
     private List<String> history = new ArrayList<>();
@@ -67,6 +72,10 @@ public class Person {
     }
     public String getUniversityTier() { return universityTier; }
     public void setUniversityTier(String t) { this.universityTier = t; }
+    
+    // NEW GETTER AND SETTER FOR APPLICATIONS
+    public int getCollegeApplicationCount() { return collegeApplicationCount; }
+    public void incrementCollegeApplicationCount() { this.collegeApplicationCount++; }
 
     public int getHouseTier() { return houseTier; }
     public void setHouseTier(int tier) { this.houseTier = tier; }
