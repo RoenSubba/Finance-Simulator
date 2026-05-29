@@ -12,7 +12,7 @@ public class GameGUI extends JFrame {
 
     private static final String WINDOW_TITLE  = "Life & Finance Simulator";
     private static final int    WINDOW_WIDTH  = 1150; 
-    private static final int    WINDOW_HEIGHT = 700;
+    private static final int    WINDOW_HEIGHT = 750;
     private static final String SHEET_PATH    = "assets/sheet.png"; 
     
     private static final Color BG_DARK = new Color(24, 26, 31);
@@ -25,7 +25,8 @@ public class GameGUI extends JFrame {
     private JLabel labelCashFlow; 
     private JLabel labelNetWorthText; 
     private JLabel labelHappinessText; 
-    private JLabel labelCareerText; // NEW: Displays your job title
+    private JLabel labelCareerText; 
+    private JLabel labelAssetText; // NEW: Shows Education, House, Car
     private JPanel actionPanel;
     private JPanel timeControlPanel; 
     private JTextPane lifeFeed; 
@@ -93,7 +94,6 @@ public class GameGUI extends JFrame {
         animTimer.start();
     }
 
-    // UPDATED: Spawns the text randomly around the center so they don't perfectly overlap
     private void spawnAnimation(String text, Color c) {
         int randX = 300 + (int)(Math.random() * 80 - 40);
         int randY = 300 + (int)(Math.random() * 40 - 20);
@@ -179,7 +179,7 @@ public class GameGUI extends JFrame {
     }
 
     private JPanel buildStatsPanel() {
-        JPanel panel = new JPanel(new GridLayout(4, 1, 5, 8)); // Increased to 4 rows for Career
+        JPanel panel = new JPanel(new GridLayout(5, 1, 5, 5)); // 5 Rows now
         TitledBorder dashBorder = BorderFactory.createTitledBorder(
             BorderFactory.createLineBorder(new Color(171, 178, 191)), "Player Dashboard: " + player.getName()
         );
@@ -199,6 +199,12 @@ public class GameGUI extends JFrame {
         labelCareerText = makeStatLabel(getCareerDisplay());
         labelCareerText.setForeground(COLOR_NEUTRAL);
         careerRow.add(labelCareerText);
+        
+        JPanel assetRow = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
+        assetRow.setOpaque(false);
+        labelAssetText = makeStatLabel(getAssetDisplay());
+        labelAssetText.setForeground(new Color(198, 120, 221)); // Purple
+        assetRow.add(labelAssetText);
 
         JPanel nwRow = new JPanel(new BorderLayout(15, 0));
         nwRow.setOpaque(false);
@@ -220,6 +226,7 @@ public class GameGUI extends JFrame {
 
         panel.add(textRow);
         panel.add(careerRow);
+        panel.add(assetRow);
         panel.add(nwRow);
         panel.add(hapRow);
 
@@ -227,8 +234,8 @@ public class GameGUI extends JFrame {
     }
     
     private String getCareerDisplay() {
-        if (player.getCareerTier() == 0) return "Status: Unemployed";
-        if (player.getCareerTier() == 1) return "Status: Part-Time Job";
+        if (player.getCareerTier() == 0) return "Career: Unemployed";
+        if (player.getCareerTier() == 1) return "Career: Part-Time Job";
         
         String tierString = "Entry-Level";
         if (player.getCareerTier() == 3) tierString = "Mid-Level";
@@ -236,11 +243,33 @@ public class GameGUI extends JFrame {
         
         return "Career: " + tierString + " in " + player.getCareerPath();
     }
+    
+    private String getAssetDisplay() {
+        String ed = "HS Diploma";
+        if (player.isEnrolled()) ed = "In College";
+        else if (player.getEducationLevel() == 1) ed = "College Dropout";
+        else if (player.getEducationLevel() == 2) ed = "Bachelor's";
+        else if (player.getEducationLevel() == 3) ed = "Master's";
+        else if (player.getEducationLevel() >= 4) ed = "PhD";
+        
+        String car = "No Car";
+        if (player.getCarTier() == 1) car = "Beater";
+        else if (player.getCarTier() == 2) car = "Sedan";
+        else if (player.getCarTier() == 3) car = "SUV";
+        else if (player.getCarTier() >= 4) car = "Supercar";
+        
+        String house = "Renting";
+        if (player.getHouseTier() == 1) house = "Starter Home";
+        else if (player.getHouseTier() == 2) house = "Suburban House";
+        else if (player.getHouseTier() >= 3) house = "Mansion";
+        
+        return "[" + ed + "]  |  [" + car + "]  |  [" + house + "]";
+    }
 
     private JLabel makeStatLabel(String text) {
         JLabel label = new JLabel(text);
         label.setForeground(Color.WHITE);
-        label.setFont(new Font("SansSerif", Font.BOLD, 16));
+        label.setFont(new Font("SansSerif", Font.BOLD, 14));
         return label;
     }
 
@@ -311,131 +340,152 @@ public class GameGUI extends JFrame {
         buttonRow.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
         buttonRow.setOpaque(false);
 
-        if (age >= 22 && player.getCareerTier() == 0) {
-            JButton btnEmergencyJob = makeIconButton("Find New Career", new Color(229, 192, 123));
-            btnEmergencyJob.addActionListener(e -> showCareerSelectionPopup());
-            buttonRow.add(btnEmergencyJob);
-        }
+        // ALWAYS SHOW ASSET UPGRADES BASED ON TIER
+        addDynamicAssetButtons(buttonRow);
 
-        if (age >= 16 && age <= 18) {
-            if (!player.hasPartTimeJob()) {
-                JButton btnJob = makeIconButton("Part-Time Job", COLOR_GOOD);
-                btnJob.addActionListener(e -> {
-                    spawnAnimation("+ Minimum Wage", COLOR_GOOD);
-                    triggerAction("Get Part-Time Job", 0, 0, "Flipping burgers for minimum wage.");
-                });
-                buttonRow.add(btnJob);
+        // EDUCATION LOOP
+        if (player.isEnrolled()) {
+            JButton btnStudy = makeIconButton("Study Hard", COLOR_NEUTRAL);
+            btnStudy.addActionListener(e -> { spawnAnimation("+ Grades", COLOR_GOOD); triggerAction("Study Hard", 0, 1, "Hitting the books."); });
+            
+            JButton btnParty = makeIconButton("Party", new Color(198, 120, 221));
+            btnParty.addActionListener(e -> { spawnAnimation("- Grades", COLOR_BAD); triggerAction("Party", 1, 1, "Going out with friends."); });
+            
+            JButton btnDrop = makeIconButton("Drop Out", COLOR_BAD);
+            btnDrop.addActionListener(e -> { spawnAnimation("- Education Stopped", COLOR_BAD); triggerAction("Drop Out", 1, 3, "Left school early."); });
+            
+            buttonRow.add(btnStudy);
+            buttonRow.add(btnParty);
+            buttonRow.add(btnDrop);
+            
+        } else {
+            // APPLY TO SCHOOL BUTTONS
+            if (age >= 18 && player.getEducationLevel() == 0) {
+                JButton btnApply = makeIconButton("Apply to College", COLOR_NEUTRAL);
+                btnApply.addActionListener(e -> showCollegeApplicationPopup());
+                buttonRow.add(btnApply);
+            } else if (player.getEducationLevel() == 2) {
+                JButton btnApply = makeIconButton("Apply for Master's", COLOR_NEUTRAL);
+                btnApply.addActionListener(e -> showCollegeApplicationPopup());
+                buttonRow.add(btnApply);
+            } else if (player.getEducationLevel() == 3) {
+                JButton btnApply = makeIconButton("Apply for PhD", COLOR_NEUTRAL);
+                btnApply.addActionListener(e -> showCollegeApplicationPopup());
+                buttonRow.add(btnApply);
             }
-            JButton btnCar = makeIconButton("Beater Car ($3k)", COLOR_BAD);
-            btnCar.addActionListener(e -> {
-                spawnAnimation("-$3,000", COLOR_BAD);
-                triggerAction("Buy Beater Car", 1, 4, "It barely runs, but it's yours!");
-            });
-            buttonRow.add(btnCar);
-            
-            JButton btnInvestEarly = makeIconButton("Invest ($1k)", COLOR_NEUTRAL);
-            btnInvestEarly.addActionListener(e -> {
-                spawnAnimation("-$1,000 Invested", COLOR_NEUTRAL);
-                triggerAction("Invest $1,000", 0, 4, "Planting seeds for compound interest.");
-            });
-            buttonRow.add(btnInvestEarly);
 
-        } else if (age >= 19 && age <= 22) {
-            JButton btnLoan = makeIconButton("Loans (+$20k)", COLOR_BAD);
-            btnLoan.addActionListener(e -> {
-                spawnAnimation("+$20,000 Cash / Debt", COLOR_BAD);
-                triggerAction("Take Student Loans", 0, 3, "Debt acquired to pay for textbooks.");
-            });
-            
-            JButton btnIntern = makeIconButton("Paid Internship", COLOR_GOOD);
-            btnIntern.addActionListener(e -> {
-                spawnAnimation("+$5,000", COLOR_GOOD);
-                triggerAction("Paid Internship", 0, 2, "Looks great on a resume.");
-            });
-            
-            JButton btnInvestEarly = makeIconButton("Invest ($1k)", COLOR_NEUTRAL);
-            btnInvestEarly.addActionListener(e -> {
-                spawnAnimation("-$1,000 Invested", COLOR_NEUTRAL);
-                triggerAction("Invest $1,000", 0, 4, "Every dollar matters early on.");
-            });
-            
-            buttonRow.add(btnLoan);
-            buttonRow.add(btnIntern);
-            buttonRow.add(btnInvestEarly);
-
-        } else if (age >= 23 && age <= 29) {
-            if (!player.hasCareer()) { 
-                JButton btnCareer = makeIconButton("Choose Career", COLOR_NEUTRAL);
-                btnCareer.addActionListener(e -> showCareerSelectionPopup());
-                buttonRow.add(btnCareer);
-            } else if (player.getCareerTier() < 4) {
-                JButton btnPromote = makeIconButton("Seek Promotion", COLOR_GOOD);
-                btnPromote.addActionListener(e -> handlePromotionAttempt());
-                buttonRow.add(btnPromote);
-            }
-            
-            JButton btnInvest = makeIconButton("Invest 50%", COLOR_NEUTRAL);
-            btnInvest.addActionListener(e -> {
-                spawnAnimation("-50% Cash Invested", COLOR_NEUTRAL);
-                triggerAction("Invest 50%", 0, 4, "Aggressive early saving.");
-            });
-            buttonRow.add(btnInvest);
-            
-            JButton btnHouse = makeIconButton("Buy House ($50k)", new Color(229, 192, 123));
-            btnHouse.addActionListener(e -> {
-                spawnAnimation("-$50,000 Down", COLOR_BAD);
-                triggerAction("Buy House", 1, 2, "You are a homeowner!");
-            });
-            buttonRow.add(btnHouse);
-
-        } else if (age >= 30 && age <= 50) {
-            if (player.hasCareer() && player.getCareerTier() < 4) {
+            // CAREER BUTTONS
+            if (age >= 22 && player.getCareerTier() == 0) {
+                JButton btnEmergencyJob = makeIconButton("Find Career", new Color(229, 192, 123));
+                btnEmergencyJob.addActionListener(e -> showCareerSelectionPopup());
+                buttonRow.add(btnEmergencyJob);
+            } else if (player.hasCareer() && player.getCareerTier() < 4) {
                 JButton btnPromote = makeIconButton("Seek Promotion", COLOR_GOOD);
                 btnPromote.addActionListener(e -> handlePromotionAttempt());
                 buttonRow.add(btnPromote);
             }
 
-            JButton btnInvest = makeIconButton("Invest 50%", COLOR_NEUTRAL);
-            btnInvest.addActionListener(e -> {
-                spawnAnimation("-50% Cash Invested", COLOR_NEUTRAL);
-                triggerAction("Invest 50%", 0, 4, "Accelerating investments.");
-            });
+            // GENERAL BUTTONS
+            JButton btnInvest = makeIconButton("Invest 50%", COLOR_GOOD);
+            btnInvest.addActionListener(e -> { spawnAnimation("-50% Cash Invested", COLOR_GOOD); triggerAction("Invest 50%", 0, 4, "Aggressive early saving."); });
             buttonRow.add(btnInvest);
             
-            JButton btnKids = makeIconButton("Have Kids", new Color(198, 120, 221));
-            btnKids.addActionListener(e -> {
-                spawnAnimation("- Happiness Up, Cash Down", new Color(198, 120, 221));
-                triggerAction("Have Kids", 1, 3, "Your expenses just skyrocketed.");
-            });
-            buttonRow.add(btnKids);
-
-        } else if (age >= 51 && age < 65) {
-            JButton btnRetire = makeIconButton("Max Retirement", COLOR_NEUTRAL);
-            btnRetire.addActionListener(e -> {
-                spawnAnimation("-80% Cash to 401k", COLOR_NEUTRAL);
-                triggerAction("Max Retirement", 1, 4, "Catch-up contributions.");
-            });
-            buttonRow.add(btnRetire);
-            
-            JButton btnBoat = makeIconButton("Buy Boat ($40k)", COLOR_BAD);
-            btnBoat.addActionListener(e -> {
-                spawnAnimation("-$40,000", COLOR_BAD);
-                triggerAction("Buy Boat", 2, 1, "The two happiest days...");
-            });
-            buttonRow.add(btnBoat);
+            if (!player.hasKids() && age >= 25) {
+                JButton btnKids = makeIconButton("Have Kids", new Color(198, 120, 221));
+                btnKids.addActionListener(e -> { spawnAnimation("- Cash, + Family", new Color(198, 120, 221)); triggerAction("Have Kids", 1, 3, "Your expenses skyrocketed."); });
+                buttonRow.add(btnKids);
+            }
         }
 
-        JLabel ageLabel = new JLabel(getLifeStageName(age), SwingConstants.CENTER);
-        ageLabel.setForeground(new Color(171, 178, 191));
-        ageLabel.setFont(new Font("Serif", Font.ITALIC, 18));
+        JLabel phaseLabel = new JLabel("Grades: " + player.getGrades() + "/100", SwingConstants.CENTER);
+        phaseLabel.setForeground(new Color(171, 178, 191));
+        phaseLabel.setFont(new Font("Serif", Font.ITALIC, 18));
 
-        actionPanel.add(ageLabel, BorderLayout.NORTH);
+        actionPanel.add(phaseLabel, BorderLayout.NORTH);
         actionPanel.add(buttonRow, BorderLayout.CENTER);
         actionPanel.revalidate();
         actionPanel.repaint();
     }
+    
+    private void addDynamicAssetButtons(JPanel buttonRow) {
+        // Dynamic Car Button
+        if (player.getCarTier() == 0) {
+            JButton btn = makeIconButton("Buy Beater ($3k)", COLOR_BAD);
+            btn.addActionListener(e -> handleAssetPurchase(3000, "Buy Beater Car", 1, true));
+            buttonRow.add(btn);
+        } else if (player.getCarTier() == 1) {
+            JButton btn = makeIconButton("Upgrade Sedan ($15k)", COLOR_NEUTRAL);
+            btn.addActionListener(e -> handleAssetPurchase(15000, "Upgrade Sedan", 2, true));
+            buttonRow.add(btn);
+        } else if (player.getCarTier() == 2) {
+            JButton btn = makeIconButton("Upgrade SUV ($60k)", COLOR_NEUTRAL);
+            btn.addActionListener(e -> handleAssetPurchase(60000, "Upgrade SUV", 3, true));
+            buttonRow.add(btn);
+        } else if (player.getCarTier() == 3) {
+            JButton btn = makeIconButton("Supercar ($250k)", new Color(229, 192, 123));
+            btn.addActionListener(e -> handleAssetPurchase(250000, "Buy Supercar", 4, true));
+            buttonRow.add(btn);
+        }
+        
+        // Dynamic House Button
+        if (player.getHouseTier() == 0) {
+            JButton btn = makeIconButton("Starter Home ($50k)", new Color(229, 192, 123));
+            btn.addActionListener(e -> handleAssetPurchase(50000, "Buy Starter Home", 1, false));
+            buttonRow.add(btn);
+        } else if (player.getHouseTier() == 1) {
+            JButton btn = makeIconButton("Suburban House ($150k)", new Color(229, 192, 123));
+            btn.addActionListener(e -> handleAssetPurchase(150000, "Buy Suburban House", 2, false));
+            buttonRow.add(btn);
+        } else if (player.getHouseTier() == 2) {
+            JButton btn = makeIconButton("Mansion ($1M)", new Color(229, 192, 123));
+            btn.addActionListener(e -> handleAssetPurchase(1000000, "Buy Mansion", 3, false));
+            buttonRow.add(btn);
+        }
+    }
+    
+    private void handleAssetPurchase(int cost, String name, int tier, boolean isCar) {
+        if (player.getCash() >= cost) {
+            player.addCash(-cost);
+            if(isCar) player.setCarTier(tier); else player.setHouseTier(tier);
+            player.modifyHappiness(20);
+            spawnAnimation("-$" + cost, COLOR_BAD);
+            logEvent("Asset Upgraded", "You bought a " + name + "!", sliceIconFromSheet(1, 4), COLOR_GOOD);
+        } else {
+            spawnAnimation("DECLINED!", COLOR_BAD);
+            logEvent("TRANSACTION FAILED", "Insufficient funds for: " + name, sliceIconFromSheet(1, 3), COLOR_BAD);
+        }
+        refreshAll();
+    }
 
-    // --- NEW: CAREER SELECTION & PROMOTION LOGIC ---
+    private void showCollegeApplicationPopup() {
+        String[] paths = {"Community College (100%)", "State University (65%)", "Private University (25%)", "Elite Ivy League (5%)"};
+        String choice = (String) JOptionPane.showInputDialog(this, 
+            "Select where to apply (Acceptance based on Grades):", "College Application", 
+            JOptionPane.QUESTION_MESSAGE, null, paths, paths[0]);
+            
+        if (choice != null) {
+            int grades = player.getGrades();
+            boolean accepted = false;
+            String tierName = "";
+            
+            if (choice.contains("Community")) { accepted = true; tierName = "Community"; }
+            else if (choice.contains("State") && grades >= 60) { accepted = (Math.random() < 0.65); tierName = "State"; }
+            else if (choice.contains("Private") && grades >= 80) { accepted = (Math.random() < 0.25); tierName = "Private"; }
+            else if (choice.contains("Elite") && grades >= 95) { accepted = (Math.random() < 0.05); tierName = "Elite"; }
+            
+            if (accepted) {
+                player.setEnrolled(true);
+                player.setUniversityTier(tierName);
+                spawnAnimation("ACCEPTED!", COLOR_GOOD);
+                logEvent("Admissions Decision", "Congratulations! You were accepted into " + tierName + " tier.", sliceIconFromSheet(0, 1), COLOR_GOOD);
+            } else {
+                spawnAnimation("REJECTED", COLOR_BAD);
+                logEvent("Admissions Decision", "We regret to inform you that you were rejected. Improve your grades.", sliceIconFromSheet(1, 3), COLOR_BAD);
+            }
+            refreshAll();
+        }
+    }
+
     private void showCareerSelectionPopup() {
         String[] paths = {"Technology", "Healthcare", "Finance", "Trades"};
         String choice = (String) JOptionPane.showInputDialog(this, 
@@ -444,7 +494,7 @@ public class GameGUI extends JFrame {
             
         if (choice != null) {
             player.setCareerPath(choice);
-            player.setCareerTier(2); // Instantly bumps them to Entry Level
+            player.setCareerTier(2); 
             spawnAnimation("+ Salary Unlocked", COLOR_GOOD);
             logEvent("Career Started", "You accepted an Entry-Level position in " + choice + ".", sliceIconFromSheet(0, 2), COLOR_NEUTRAL);
             refreshAll();
@@ -457,8 +507,17 @@ public class GameGUI extends JFrame {
             spawnAnimation("+ PROMOTED!", COLOR_GOOD);
             logEvent("Career Advancement", "You were promoted! Salary increased.", sliceIconFromSheet(0, 2), COLOR_GOOD);
         } else {
-            spawnAnimation("- Passed Over", COLOR_BAD);
-            logEvent("Promotion Denied", "Your boss passed you over. Keep grinding.", sliceIconFromSheet(1, 3), COLOR_BAD);
+            // Check if it failed because of Education
+            if (player.getCareerTier() == 2 && player.getEducationLevel() < 2) {
+                spawnAnimation("- Needs Bachelor's", COLOR_BAD);
+                logEvent("Promotion Denied", "HR requires a Bachelor's Degree for Mid-Level roles.", sliceIconFromSheet(1, 3), COLOR_BAD);
+            } else if (player.getCareerTier() == 3 && player.getEducationLevel() < 3) {
+                spawnAnimation("- Needs Master's", COLOR_BAD);
+                logEvent("Promotion Denied", "HR requires a Master's Degree for Executive roles.", sliceIconFromSheet(1, 3), COLOR_BAD);
+            } else {
+                spawnAnimation("- Passed Over", COLOR_BAD);
+                logEvent("Promotion Denied", "Your boss passed you over. Keep grinding.", sliceIconFromSheet(1, 3), COLOR_BAD);
+            }
         }
         refreshAll();
     }
@@ -469,7 +528,7 @@ public class GameGUI extends JFrame {
             logEvent("Action Taken: " + actionName, message, sliceIconFromSheet(row, col), COLOR_NEUTRAL);
         } else {
             spawnAnimation("DECLINED!", COLOR_BAD);
-            logEvent("TRANSACTION FAILED", "Insufficient funds to execute: " + actionName, sliceIconFromSheet(1, 3), COLOR_BAD);
+            logEvent("TRANSACTION FAILED", "Action Failed: " + actionName, sliceIconFromSheet(1, 3), COLOR_BAD);
         }
         refreshAll();
     }
@@ -483,13 +542,6 @@ public class GameGUI extends JFrame {
         } catch (Exception ex) { return null; }
     }
 
-    private String getLifeStageName(int age) {
-        if      (age <= 18) return "Life Stage: High School";
-        else if (age <= 22) return "Life Stage: College / Trade";
-        else if (age <= 29) return "Life Stage: Young Professional";
-        else if (age <= 50) return "Life Stage: Adulthood";
-        else                return "Life Stage: Pre-Retirement";
-    }
 
     private void showGameOverScreen() {
         actionPanel.removeAll();
@@ -532,6 +584,7 @@ public class GameGUI extends JFrame {
         labelAge.setText("Age: " + player.getAge());
         labelCashFlow.setText("Cash Flow: $" + (int)GameEngine.getAnnualCashFlow(player) + "/yr");
         labelCareerText.setText(getCareerDisplay());
+        labelAssetText.setText(getAssetDisplay());
         
         int currentNW = (int)player.getNetWorth();
         int nextMilestone = 10000;

@@ -4,15 +4,21 @@ import java.util.List;
 public class Person {
     private String name;
     private int age = 16;
-    private double cash = 1000; // Start with some high school pocket money
+    private double cash = 1000; 
     private double investments = 0;
-    private int happiness = 50;
+    private int happiness = 60;
     
-    // --- NEW CAREER SYSTEM ---
-    private int careerTier = 0; // 0: Unemployed, 1: Part-Time, 2: Entry, 3: Mid, 4: Executive
+    private int careerTier = 0; 
     private String careerPath = "Undeclared";
     
-    private boolean ownsHouse = false;
+    private int educationLevel = 0; 
+    private boolean isEnrolled = false;
+    private int yearsInDegree = 0;
+    private int grades = 75; 
+    private String universityTier = "None";
+    private int houseTier = 0; 
+    private int carTier = 0;  
+    
     private boolean hasKids = false;
     private List<String> history = new ArrayList<>();
 
@@ -37,21 +43,35 @@ public class Person {
         if (this.happiness < 0) this.happiness = 0;
     }
 
-    // Bridging old logic to the new RPG Tier system
     public boolean hasPartTimeJob() { return careerTier == 1; }
     public void setPartTimeJob(boolean b) { if(b) careerTier = 1; else careerTier = 0; }
-    
     public boolean hasCareer() { return careerTier >= 2; }
     public void setCareer(boolean b) { if(b) careerTier = 2; else careerTier = 0; }
-    
     public int getCareerTier() { return careerTier; }
     public void setCareerTier(int tier) { this.careerTier = tier; }
-    
     public String getCareerPath() { return careerPath; }
     public void setCareerPath(String path) { this.careerPath = path; }
 
-    public boolean ownsHouse() { return ownsHouse; }
-    public void setOwnsHouse(boolean b) { this.ownsHouse = b; }
+    public int getEducationLevel() { return educationLevel; }
+    public void setEducationLevel(int e) { this.educationLevel = e; }
+    public boolean isEnrolled() { return isEnrolled; }
+    public void setEnrolled(boolean b) { this.isEnrolled = b; }
+    public int getYearsInDegree() { return yearsInDegree; }
+    public void addYearInDegree() { this.yearsInDegree++; }
+    public void resetYearsInDegree() { this.yearsInDegree = 0; }
+    public int getGrades() { return grades; }
+    public void modifyGrades(int amount) {
+        this.grades += amount;
+        if(this.grades > 100) this.grades = 100;
+        if(this.grades < 0) this.grades = 0;
+    }
+    public String getUniversityTier() { return universityTier; }
+    public void setUniversityTier(String t) { this.universityTier = t; }
+
+    public int getHouseTier() { return houseTier; }
+    public void setHouseTier(int tier) { this.houseTier = tier; }
+    public int getCarTier() { return carTier; }
+    public void setCarTier(int tier) { this.carTier = tier; }
     
     public boolean hasKids() { return hasKids; }
     public void setHasKids(boolean b) { this.hasKids = b; }
