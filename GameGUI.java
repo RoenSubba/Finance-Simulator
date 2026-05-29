@@ -367,7 +367,7 @@ public class GameGUI extends JFrame {
                 buttonRow.add(btnPromote);
             }
 
-            if (player.getEducationLevel() == 0 || player.getEducationLevel() == 1) {
+            if (age >= 17 && (player.getEducationLevel() == 0 || player.getEducationLevel() == 1)) {
                 JButton btnApply = makeIconButton("Apply to College", COLOR_NEUTRAL);
                 btnApply.addActionListener(e -> showCollegeApplicationPopup());
                 buttonRow.add(btnApply);
