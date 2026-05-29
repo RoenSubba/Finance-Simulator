@@ -62,7 +62,6 @@ public class GameGUI extends JFrame {
         ));
         panel.setBackground(new Color(30, 30, 50));
 
-        // 1. Top Row: Age & Cash Flow (Text)
         JPanel textRow = new JPanel(new FlowLayout(FlowLayout.CENTER, 30, 0));
         textRow.setOpaque(false);
         labelAge      = makeStatLabel("Age: " + player.getAge());
@@ -70,7 +69,6 @@ public class GameGUI extends JFrame {
         textRow.add(labelAge);
         textRow.add(labelCashFlow);
 
-        // 2. Middle Row: The Net Worth Visualizer
         JPanel nwRow = new JPanel(new BorderLayout(10, 0));
         nwRow.setOpaque(false);
         JLabel nwLabel = makeStatLabel("Net Worth:");
@@ -88,7 +86,6 @@ public class GameGUI extends JFrame {
         
         this.nwProgressBar = nwBar;   
 
-        // 3. Bottom Row: Happiness Visualizer
         JPanel hapRow = new JPanel(new BorderLayout(10, 0));
         hapRow.setOpaque(false);
         JLabel hapLabel = makeStatLabel("Happiness:");
