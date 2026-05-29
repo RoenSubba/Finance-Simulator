@@ -530,6 +530,13 @@ public class GameGUI extends JFrame {
             JOptionPane.QUESTION_MESSAGE, null, paths, paths[0]);
 
         if (choice != null) {
+            if ((choice.equals("Healthcare") || choice.equals("Finance")) && player.getEducationLevel() < 2) {
+                spawnAnimation("Degree Required!", COLOR_BAD);
+                logEvent("Application Denied", choice + " requires at least a Bachelor's degree.", sliceIconFromSheet(1, 3), COLOR_BAD);
+                refreshAll();
+                return;
+            }
+
             player.setCareerPath(choice);
             player.setCareerTier(2);
             spawnAnimation("+ Salary Unlocked", COLOR_GOOD);
