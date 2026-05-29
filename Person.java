@@ -1,71 +1,64 @@
 import java.util.ArrayList;
+import java.util.List;
 
 public class Person {
     private String name;
-    private int age;
-    private double cash;
-    private double investments;
-    private int happiness;
-    private ArrayList<String> lifeHistory;
+    private int age = 16;
+    private double cash = 1000; // Start with some high school pocket money
+    private double investments = 0;
+    private int happiness = 50;
+    
+    // --- NEW CAREER SYSTEM ---
+    private int careerTier = 0; // 0: Unemployed, 1: Part-Time, 2: Entry, 3: Mid, 4: Executive
+    private String careerPath = "Undeclared";
+    
+    private boolean ownsHouse = false;
+    private boolean hasKids = false;
+    private List<String> history = new ArrayList<>();
 
-    // --- LIFE STATUS FLAGS ---
-    private boolean hasPartTimeJob;
-    private boolean hasCareer;
-    private boolean ownsHouse;
-    private boolean hasKids;
+    public Person(String name) { this.name = name; }
 
-    public Person(String name) {
-        this.name = name;
-        this.age = 16;
-        this.cash = 1000.0;
-        this.investments = 0.0;
-        this.happiness = 100;
-        this.lifeHistory = new ArrayList<>();
-        
-        this.hasPartTimeJob = false;
-        this.hasCareer = false;
-        this.ownsHouse = false;
-        this.hasKids = false;
-    }
-
-    // --- GETTERS ---
     public String getName() { return name; }
     public int getAge() { return age; }
-    public double getCash() { return cash; }
-    public double getInvestments() { return investments; }
-    public double getNetWorth() { return cash + investments; }
-    public int getHappiness() { return happiness; }
+    public void addAge(int a) { this.age += a; }
     
-    public boolean hasPartTimeJob() { return hasPartTimeJob; }
-    public boolean hasCareer() { return hasCareer; }
-    public boolean ownsHouse() { return ownsHouse; }
-    public boolean hasKids() { return hasKids; }
-
-    // --- SETTERS / MODIFIERS ---
-    public void setPartTimeJob(boolean b) { this.hasPartTimeJob = b; }
-    public void setCareer(boolean b) { this.hasCareer = b; }
-    public void setOwnsHouse(boolean b) { this.ownsHouse = b; }
-    public void setHasKids(boolean b) { this.hasKids = b; }
-
-    public void addAge(int years) { this.age += years; }
+    public double getCash() { return cash; }
     public void addCash(double amount) { this.cash += amount; }
+    
+    public double getInvestments() { return investments; }
     public void addInvestments(double amount) { this.investments += amount; }
     
-    public void modifyHappiness(int amount) {
-        this.happiness += amount;
+    public double getNetWorth() { return cash + investments; }
+    
+    public int getHappiness() { return happiness; }
+    public void modifyHappiness(int amount) { 
+        this.happiness += amount; 
         if (this.happiness > 100) this.happiness = 100;
         if (this.happiness < 0) this.happiness = 0;
     }
 
-    // --- HISTORY METHODS ---
-    public void addLifeEvent(String event) {
-        lifeHistory.add("Age " + age + ": " + event);
-    }
+    // Bridging old logic to the new RPG Tier system
+    public boolean hasPartTimeJob() { return careerTier == 1; }
+    public void setPartTimeJob(boolean b) { if(b) careerTier = 1; else careerTier = 0; }
+    
+    public boolean hasCareer() { return careerTier >= 2; }
+    public void setCareer(boolean b) { if(b) careerTier = 2; else careerTier = 0; }
+    
+    public int getCareerTier() { return careerTier; }
+    public void setCareerTier(int tier) { this.careerTier = tier; }
+    
+    public String getCareerPath() { return careerPath; }
+    public void setCareerPath(String path) { this.careerPath = path; }
 
+    public boolean ownsHouse() { return ownsHouse; }
+    public void setOwnsHouse(boolean b) { this.ownsHouse = b; }
+    
+    public boolean hasKids() { return hasKids; }
+    public void setHasKids(boolean b) { this.hasKids = b; }
+
+    public void addLifeEvent(String event) { history.add("Age " + age + ": " + event); }
     public void printHistory() {
-        System.out.println("--- " + name + "'s Life History ---");
-        for (String event : lifeHistory) {
-            System.out.println(event);
-        }
+        System.out.println("--- Life History for " + name + " ---");
+        for(String s : history) System.out.println(s);
     }
 }

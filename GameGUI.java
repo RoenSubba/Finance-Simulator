@@ -25,6 +25,7 @@ public class GameGUI extends JFrame {
     private JLabel labelCashFlow; 
     private JLabel labelNetWorthText; 
     private JLabel labelHappinessText; 
+    private JLabel labelCareerText; // NEW: Displays your job title
     private JPanel actionPanel;
     private JPanel timeControlPanel; 
     private JTextPane lifeFeed; 
@@ -34,7 +35,6 @@ public class GameGUI extends JFrame {
     private Person player;
     private BufferedImage masterSheet;
 
-    // --- ANIMATION ENGINE VARIABLES ---
     private JPanel glassPane;
     private List<FloatingText> animations = new CopyOnWriteArrayList<>();
     private Timer animTimer;
@@ -52,7 +52,7 @@ public class GameGUI extends JFrame {
         setLocationRelativeTo(null); 
         getContentPane().setBackground(BG_DARK);
 
-        setupAnimationEngine(); // Initialize our particle system
+        setupAnimationEngine(); 
         buildFrame();
         updateActionPanel(player.getAge());
         
@@ -60,7 +60,6 @@ public class GameGUI extends JFrame {
         setVisible(true);
     }
 
-    // --- ADVANCED GRAPHICS: FLOATING ANIMATION ENGINE ---
     private void setupAnimationEngine() {
         glassPane = new JPanel() {
             @Override
@@ -68,7 +67,7 @@ public class GameGUI extends JFrame {
                 super.paintComponent(g);
                 Graphics2D g2 = (Graphics2D) g;
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setFont(new Font("SansSerif", Font.BOLD, 22));
+                g2.setFont(new Font("SansSerif", Font.BOLD, 26));
 
                 for (FloatingText ft : animations) {
                     g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, ft.alpha));
@@ -81,12 +80,11 @@ public class GameGUI extends JFrame {
         setGlassPane(glassPane);
         glassPane.setVisible(true);
 
-        // Runs at 60 Frames Per Second to animate the floating text
         animTimer = new Timer(16, e -> {
             boolean needsRepaint = false;
             for (FloatingText ft : animations) {
-                ft.y -= 2; // Float upwards
-                ft.alpha -= 0.02f; // Fade out
+                ft.y -= 2; 
+                ft.alpha -= 0.02f; 
                 if (ft.alpha <= 0) animations.remove(ft);
                 needsRepaint = true;
             }
@@ -95,9 +93,11 @@ public class GameGUI extends JFrame {
         animTimer.start();
     }
 
+    // UPDATED: Spawns the text randomly around the center so they don't perfectly overlap
     private void spawnAnimation(String text, Color c) {
-        // Spawns the floating text dynamically above the dashboard
-        animations.add(new FloatingText(text, 250, 250, c));
+        int randX = 300 + (int)(Math.random() * 80 - 40);
+        int randY = 300 + (int)(Math.random() * 40 - 20);
+        animations.add(new FloatingText(text, randX, randY, c));
     }
 
     class FloatingText {
@@ -106,7 +106,6 @@ public class GameGUI extends JFrame {
             this.text = t; this.x = x; this.y = y; this.color = c;
         }
     }
-    // ----------------------------------------------------
 
     private void buildFrame() {
         setLayout(new BorderLayout(15, 15));
@@ -180,7 +179,7 @@ public class GameGUI extends JFrame {
     }
 
     private JPanel buildStatsPanel() {
-        JPanel panel = new JPanel(new GridLayout(3, 1, 5, 10));
+        JPanel panel = new JPanel(new GridLayout(4, 1, 5, 8)); // Increased to 4 rows for Career
         TitledBorder dashBorder = BorderFactory.createTitledBorder(
             BorderFactory.createLineBorder(new Color(171, 178, 191)), "Player Dashboard: " + player.getName()
         );
@@ -195,31 +194,47 @@ public class GameGUI extends JFrame {
         textRow.add(labelAge);
         textRow.add(labelCashFlow);
 
+        JPanel careerRow = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
+        careerRow.setOpaque(false);
+        labelCareerText = makeStatLabel(getCareerDisplay());
+        labelCareerText.setForeground(COLOR_NEUTRAL);
+        careerRow.add(labelCareerText);
+
         JPanel nwRow = new JPanel(new BorderLayout(15, 0));
         nwRow.setOpaque(false);
         labelNetWorthText = makeStatLabel("Net Worth: $" + (int)player.getNetWorth());
-        
         nwProgressBar = new ModernProgressBar(0, 10000, COLOR_GOOD); 
         nwProgressBar.setValue((int)player.getNetWorth());
-        nwProgressBar.setPreferredSize(new Dimension(400, 25));
+        nwProgressBar.setPreferredSize(new Dimension(400, 20));
         nwRow.add(labelNetWorthText, BorderLayout.WEST);
         nwRow.add(nwProgressBar, BorderLayout.CENTER);
 
         JPanel hapRow = new JPanel(new BorderLayout(15, 0));
         hapRow.setOpaque(false);
         labelHappinessText = makeStatLabel("Happiness: " + player.getHappiness() + " / 100");
-        
         hapProgressBar = new ModernProgressBar(0, 100, new Color(241, 196, 15));
         hapProgressBar.setValue(player.getHappiness());
-        hapProgressBar.setPreferredSize(new Dimension(400, 25));
+        hapProgressBar.setPreferredSize(new Dimension(400, 20));
         hapRow.add(labelHappinessText, BorderLayout.WEST);
         hapRow.add(hapProgressBar, BorderLayout.CENTER);
 
         panel.add(textRow);
+        panel.add(careerRow);
         panel.add(nwRow);
         panel.add(hapRow);
 
         return panel;
+    }
+    
+    private String getCareerDisplay() {
+        if (player.getCareerTier() == 0) return "Status: Unemployed";
+        if (player.getCareerTier() == 1) return "Status: Part-Time Job";
+        
+        String tierString = "Entry-Level";
+        if (player.getCareerTier() == 3) tierString = "Mid-Level";
+        if (player.getCareerTier() >= 4) tierString = "Executive";
+        
+        return "Career: " + tierString + " in " + player.getCareerPath();
     }
 
     private JLabel makeStatLabel(String text) {
@@ -292,40 +307,57 @@ public class GameGUI extends JFrame {
     public void updateActionPanel(int age) {
         actionPanel.removeAll();
         
-        // FIX 1: Using GridLayout(0, 3) ensures buttons neatly wrap and never go off-screen!
         JPanel buttonRow = new JPanel(new GridLayout(0, 3, 15, 15));
         buttonRow.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
         buttonRow.setOpaque(false);
 
-        if (age >= 22 && !player.hasCareer()) {
-            JButton btnEmergencyJob = makeIconButton("Apply for Job", new Color(229, 192, 123));
-            btnEmergencyJob.addActionListener(e -> triggerAction("Start Career", 0, 2, "Back on track!"));
+        if (age >= 22 && player.getCareerTier() == 0) {
+            JButton btnEmergencyJob = makeIconButton("Find New Career", new Color(229, 192, 123));
+            btnEmergencyJob.addActionListener(e -> showCareerSelectionPopup());
             buttonRow.add(btnEmergencyJob);
         }
 
         if (age >= 16 && age <= 18) {
             if (!player.hasPartTimeJob()) {
-                JButton btnJob = makeIconButton("Get Part-Time", COLOR_GOOD);
-                btnJob.addActionListener(e -> triggerAction("Get Part-Time Job", 0, 0, "Flipping burgers for minimum wage."));
+                JButton btnJob = makeIconButton("Part-Time Job", COLOR_GOOD);
+                btnJob.addActionListener(e -> {
+                    spawnAnimation("+ Minimum Wage", COLOR_GOOD);
+                    triggerAction("Get Part-Time Job", 0, 0, "Flipping burgers for minimum wage.");
+                });
                 buttonRow.add(btnJob);
             }
-            JButton btnCar = makeIconButton("Buy Beater Car", COLOR_BAD);
-            btnCar.addActionListener(e -> triggerAction("Buy Beater Car", 1, 4, "It barely runs, but it's yours!"));
+            JButton btnCar = makeIconButton("Beater Car ($3k)", COLOR_BAD);
+            btnCar.addActionListener(e -> {
+                spawnAnimation("-$3,000", COLOR_BAD);
+                triggerAction("Buy Beater Car", 1, 4, "It barely runs, but it's yours!");
+            });
             buttonRow.add(btnCar);
             
-            JButton btnInvestEarly = makeIconButton("Invest $1,000", COLOR_NEUTRAL);
-            btnInvestEarly.addActionListener(e -> triggerAction("Invest $1,000", 0, 4, "Planting seeds for compound interest."));
+            JButton btnInvestEarly = makeIconButton("Invest ($1k)", COLOR_NEUTRAL);
+            btnInvestEarly.addActionListener(e -> {
+                spawnAnimation("-$1,000 Invested", COLOR_NEUTRAL);
+                triggerAction("Invest $1,000", 0, 4, "Planting seeds for compound interest.");
+            });
             buttonRow.add(btnInvestEarly);
 
         } else if (age >= 19 && age <= 22) {
-            JButton btnLoan = makeIconButton("Student Loans", COLOR_BAD);
-            btnLoan.addActionListener(e -> triggerAction("Take Student Loans", 0, 3, "Debt acquired to pay for textbooks."));
+            JButton btnLoan = makeIconButton("Loans (+$20k)", COLOR_BAD);
+            btnLoan.addActionListener(e -> {
+                spawnAnimation("+$20,000 Cash / Debt", COLOR_BAD);
+                triggerAction("Take Student Loans", 0, 3, "Debt acquired to pay for textbooks.");
+            });
             
             JButton btnIntern = makeIconButton("Paid Internship", COLOR_GOOD);
-            btnIntern.addActionListener(e -> triggerAction("Paid Internship", 0, 2, "Looks great on a resume."));
+            btnIntern.addActionListener(e -> {
+                spawnAnimation("+$5,000", COLOR_GOOD);
+                triggerAction("Paid Internship", 0, 2, "Looks great on a resume.");
+            });
             
-            JButton btnInvestEarly = makeIconButton("Invest $1,000", COLOR_NEUTRAL);
-            btnInvestEarly.addActionListener(e -> triggerAction("Invest $1,000", 0, 4, "Every dollar matters early on."));
+            JButton btnInvestEarly = makeIconButton("Invest ($1k)", COLOR_NEUTRAL);
+            btnInvestEarly.addActionListener(e -> {
+                spawnAnimation("-$1,000 Invested", COLOR_NEUTRAL);
+                triggerAction("Invest $1,000", 0, 4, "Every dollar matters early on.");
+            });
             
             buttonRow.add(btnLoan);
             buttonRow.add(btnIntern);
@@ -333,36 +365,63 @@ public class GameGUI extends JFrame {
 
         } else if (age >= 23 && age <= 29) {
             if (!player.hasCareer()) { 
-                JButton btnCareer = makeIconButton("Start Career", COLOR_NEUTRAL);
-                btnCareer.addActionListener(e -> triggerAction("Start Career", 0, 2, "Welcome to the corporate grind."));
+                JButton btnCareer = makeIconButton("Choose Career", COLOR_NEUTRAL);
+                btnCareer.addActionListener(e -> showCareerSelectionPopup());
                 buttonRow.add(btnCareer);
+            } else if (player.getCareerTier() < 4) {
+                JButton btnPromote = makeIconButton("Seek Promotion", COLOR_GOOD);
+                btnPromote.addActionListener(e -> handlePromotionAttempt());
+                buttonRow.add(btnPromote);
             }
-            JButton btnInvest = makeIconButton("Invest 50%", COLOR_GOOD);
-            btnInvest.addActionListener(e -> triggerAction("Invest 50%", 0, 4, "Aggressive early saving."));
+            
+            JButton btnInvest = makeIconButton("Invest 50%", COLOR_NEUTRAL);
+            btnInvest.addActionListener(e -> {
+                spawnAnimation("-50% Cash Invested", COLOR_NEUTRAL);
+                triggerAction("Invest 50%", 0, 4, "Aggressive early saving.");
+            });
             buttonRow.add(btnInvest);
             
-            JButton btnHouse = makeIconButton("Buy House", new Color(229, 192, 123));
-            btnHouse.addActionListener(e -> triggerAction("Buy House", 1, 2, "You are a homeowner!"));
+            JButton btnHouse = makeIconButton("Buy House ($50k)", new Color(229, 192, 123));
+            btnHouse.addActionListener(e -> {
+                spawnAnimation("-$50,000 Down", COLOR_BAD);
+                triggerAction("Buy House", 1, 2, "You are a homeowner!");
+            });
             buttonRow.add(btnHouse);
 
         } else if (age >= 30 && age <= 50) {
-            JButton btnInvest = makeIconButton("Invest 50%", COLOR_GOOD);
-            btnInvest.addActionListener(e -> triggerAction("Invest 50%", 0, 4, "Accelerating investments."));
+            if (player.hasCareer() && player.getCareerTier() < 4) {
+                JButton btnPromote = makeIconButton("Seek Promotion", COLOR_GOOD);
+                btnPromote.addActionListener(e -> handlePromotionAttempt());
+                buttonRow.add(btnPromote);
+            }
+
+            JButton btnInvest = makeIconButton("Invest 50%", COLOR_NEUTRAL);
+            btnInvest.addActionListener(e -> {
+                spawnAnimation("-50% Cash Invested", COLOR_NEUTRAL);
+                triggerAction("Invest 50%", 0, 4, "Accelerating investments.");
+            });
+            buttonRow.add(btnInvest);
             
             JButton btnKids = makeIconButton("Have Kids", new Color(198, 120, 221));
-            btnKids.addActionListener(e -> triggerAction("Have Kids", 1, 3, "Your expenses just skyrocketed."));
-            
-            buttonRow.add(btnInvest);
+            btnKids.addActionListener(e -> {
+                spawnAnimation("- Happiness Up, Cash Down", new Color(198, 120, 221));
+                triggerAction("Have Kids", 1, 3, "Your expenses just skyrocketed.");
+            });
             buttonRow.add(btnKids);
 
         } else if (age >= 51 && age < 65) {
             JButton btnRetire = makeIconButton("Max Retirement", COLOR_NEUTRAL);
-            btnRetire.addActionListener(e -> triggerAction("Max Retirement", 1, 4, "Catch-up contributions."));
-            
-            JButton btnBoat = makeIconButton("Buy Boat", COLOR_BAD);
-            btnBoat.addActionListener(e -> triggerAction("Buy Boat", 2, 1, "The two happiest days..."));
-            
+            btnRetire.addActionListener(e -> {
+                spawnAnimation("-80% Cash to 401k", COLOR_NEUTRAL);
+                triggerAction("Max Retirement", 1, 4, "Catch-up contributions.");
+            });
             buttonRow.add(btnRetire);
+            
+            JButton btnBoat = makeIconButton("Buy Boat ($40k)", COLOR_BAD);
+            btnBoat.addActionListener(e -> {
+                spawnAnimation("-$40,000", COLOR_BAD);
+                triggerAction("Buy Boat", 2, 1, "The two happiest days...");
+            });
             buttonRow.add(btnBoat);
         }
 
@@ -376,19 +435,42 @@ public class GameGUI extends JFrame {
         actionPanel.repaint();
     }
 
+    // --- NEW: CAREER SELECTION & PROMOTION LOGIC ---
+    private void showCareerSelectionPopup() {
+        String[] paths = {"Technology", "Healthcare", "Finance", "Trades"};
+        String choice = (String) JOptionPane.showInputDialog(this, 
+            "Select your professional industry:", "Career Path Selection", 
+            JOptionPane.QUESTION_MESSAGE, null, paths, paths[0]);
+            
+        if (choice != null) {
+            player.setCareerPath(choice);
+            player.setCareerTier(2); // Instantly bumps them to Entry Level
+            spawnAnimation("+ Salary Unlocked", COLOR_GOOD);
+            logEvent("Career Started", "You accepted an Entry-Level position in " + choice + ".", sliceIconFromSheet(0, 2), COLOR_NEUTRAL);
+            refreshAll();
+        }
+    }
+
+    private void handlePromotionAttempt() {
+        boolean success = GameEngine.takeInstantAction(player, "Seek Promotion");
+        if (success) {
+            spawnAnimation("+ PROMOTED!", COLOR_GOOD);
+            logEvent("Career Advancement", "You were promoted! Salary increased.", sliceIconFromSheet(0, 2), COLOR_GOOD);
+        } else {
+            spawnAnimation("- Passed Over", COLOR_BAD);
+            logEvent("Promotion Denied", "Your boss passed you over. Keep grinding.", sliceIconFromSheet(1, 3), COLOR_BAD);
+        }
+        refreshAll();
+    }
+
     private void triggerAction(String actionName, int row, int col, String message) {
-        // FIX 2: Check if the action succeeds (requires sufficient funds)
         boolean success = GameEngine.takeInstantAction(player, actionName);
-        
         if (success) {
             logEvent("Action Taken: " + actionName, message, sliceIconFromSheet(row, col), COLOR_NEUTRAL);
-            spawnAnimation("ACTION LOGGED", COLOR_GOOD);
         } else {
-            // Logs an error if they try to buy something they can't afford
-            logEvent("TRANSACTION FAILED", "Insufficient funds for: " + actionName, sliceIconFromSheet(1, 3), COLOR_BAD);
             spawnAnimation("DECLINED!", COLOR_BAD);
+            logEvent("TRANSACTION FAILED", "Insufficient funds to execute: " + actionName, sliceIconFromSheet(1, 3), COLOR_BAD);
         }
-        
         refreshAll();
     }
 
@@ -449,6 +531,7 @@ public class GameGUI extends JFrame {
     public void refreshAll() {
         labelAge.setText("Age: " + player.getAge());
         labelCashFlow.setText("Cash Flow: $" + (int)GameEngine.getAnnualCashFlow(player) + "/yr");
+        labelCareerText.setText(getCareerDisplay());
         
         int currentNW = (int)player.getNetWorth();
         int nextMilestone = 10000;

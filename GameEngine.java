@@ -24,7 +24,7 @@ public class GameEngine {
 
         p.addCash(getAnnualCashFlow(p));
         if (p.hasPartTimeJob()) p.modifyHappiness(-5);
-        if (p.hasCareer())      p.modifyHappiness(-10);
+        if (p.hasCareer())      p.modifyHappiness(-10); // Corporate stress
 
         applyCompoundInterest(p);
         simulateMarketYear(p);
@@ -42,19 +42,16 @@ public class GameEngine {
                     case 0:
                         p.addCash(-3000);
                         p.modifyHappiness(-15);
-                        p.addLifeEvent("EMERGENCY: Medical bill! (-$3,000)");
                         return "EMERGENCY: Medical bill copay after an unexpected injury! (-$3,000)";
                     case 1:
                         p.addCash(-1500);
                         p.modifyHappiness(-10);
-                        p.addLifeEvent("EMERGENCY: Car broke down! (-$1,500)");
                         return "EMERGENCY: Car transmission failed. Mechanics are expensive! (-$1,500)";
                     case 2:
                         if (p.hasCareer()) {
-                            p.setCareer(false); 
+                            p.setCareerTier(0); // FIRED!
                             p.modifyHappiness(-30);
-                            p.addLifeEvent("EMERGENCY: Laid off!");
-                            return "EMERGENCY: Corporate downsizing. You lost your career! Income dropped to $0. Look for a new job immediately!";
+                            return "EMERGENCY: Corporate downsizing. You were laid off! Look for a new job immediately!";
                         }
                         break;
                     case 3:
@@ -62,7 +59,6 @@ public class GameEngine {
                             double crash = oldInvest * 0.30;
                             p.addInvestments(-crash);
                             p.modifyHappiness(-20);
-                            p.addLifeEvent("EMERGENCY: Market Crash! (-30%)");
                             return "EMERGENCY: Stock market correction! Your investment portfolio dropped 30%.";
                         }
                         break;
@@ -74,22 +70,19 @@ public class GameEngine {
                         if (p.hasCareer()) {
                             p.addCash(5000);
                             p.modifyHappiness(20);
-                            p.addLifeEvent("WINDFALL: Work Bonus! (+$5,000)");
-                            return "WINDFALL: Excellent performance! Your boss handed you a $5,000 holiday bonus. (+20 Happiness)";
+                            return "WINDFALL: Excellent performance! Your boss handed you a $5,000 holiday bonus.";
                         }
                         break;
                     case 1:
                         p.addCash(2000);
                         p.modifyHappiness(15);
-                        p.addLifeEvent("WINDFALL: Tax Refund! (+$2,000)");
                         return "WINDFALL: Tax season victory! You received a $2,000 government tax refund check.";
                     case 2:
                         if (p.getInvestments() > 5000) {
                             double surge = p.getInvestments() * 0.25;
                             p.addInvestments(surge);
                             p.modifyHappiness(25);
-                            p.addLifeEvent("WINDFALL: Market Surge! (+25%)");
-                            return "WINDFALL: Market Rally! One of your index holdings exploded. Portfolio value surged +25%! (+25 Happiness)";
+                            return "WINDFALL: Market Rally! One of your index holdings exploded. Portfolio value surged +25%!";
                         }
                         break;
                 }
@@ -110,11 +103,15 @@ public class GameEngine {
 
     public static double getAnnualCashFlow(Person p) {
         double flow = 0;
-        if (p.hasPartTimeJob()) flow += 12000; 
-        if (p.hasCareer())      flow += 60000; 
+        
+        // --- NEW RPG SALARY TIERS ---
+        if (p.getCareerTier() == 1) flow += 15000; // Part-Time
+        else if (p.getCareerTier() == 2) flow += 50000; // Entry Level
+        else if (p.getCareerTier() == 3) flow += 85000; // Mid-Level
+        else if (p.getCareerTier() == 4) flow += 140000; // Executive
 
-        if (p.getAge() >= 22) flow -= 20000; 
-        else if (p.getAge() >= 18) flow -= 5000; 
+        if (p.getAge() >= 22) flow -= 25000; // Adult living costs
+        else if (p.getAge() >= 18) flow -= 8000; // College living costs
         
         if (p.ownsHouse()) flow -= 24000; 
         if (p.hasKids())   flow -= 18000; 
@@ -122,71 +119,65 @@ public class GameEngine {
         return flow;
     }
 
-    // UPDATED: Now returns a boolean. True if successful, False if broke!
     public static boolean takeInstantAction(Person p, String action) {
         switch (action) {
             case "Get Part-Time Job":
-                p.setPartTimeJob(true);
-                p.addLifeEvent("Hired for a part-time job.");
+                p.setCareerTier(1);
                 return true;
             case "Buy Beater Car":
                 if (p.getCash() < 3000) return false;
                 p.addCash(-3000);
                 p.modifyHappiness(20);
-                p.addLifeEvent("Bought a cheap first car.");
                 return true;
             case "Invest $1,000":
                 if (p.getCash() < 1000) return false;
                 p.addCash(-1000);
                 p.addInvestments(1000);
-                p.addLifeEvent("Started early investing! ($1,000)");
                 return true;
             case "Take Student Loans":
                 p.addCash(20000); 
                 p.addInvestments(-25000); 
-                p.addLifeEvent("Took out student loans to survive college.");
                 return true;
             case "Paid Internship":
                 p.addCash(5000);
                 p.modifyHappiness(-5);
-                p.addLifeEvent("Completed a grueling summer internship.");
                 return true;
-            case "Start Career":
-                p.setPartTimeJob(false); 
-                p.setCareer(true);
-                p.addLifeEvent("Started a professional career.");
-                return true;
+            case "Seek Promotion":
+                if (p.getCareerTier() >= 4) return false;
+                if (rand.nextDouble() > 0.4) { // 60% chance of promotion
+                    p.setCareerTier(p.getCareerTier() + 1);
+                    p.modifyHappiness(-10); // Stressful
+                    return true;
+                } else {
+                    p.modifyHappiness(-15);
+                    return false;
+                }
             case "Invest 50%":
                 if (p.getCash() <= 0) return false;
                 double investAmount = p.getCash() * 0.50;
                 p.addCash(-investAmount);
                 p.addInvestments(investAmount);
-                p.addLifeEvent("Moved 50% of cash into investments.");
                 return true;
             case "Buy House":
                 if (p.getCash() < 50000) return false;
                 p.setOwnsHouse(true);
                 p.addCash(-50000); 
                 p.modifyHappiness(20);
-                p.addLifeEvent("Bought a house!");
                 return true;
             case "Have Kids":
                 p.setHasKids(true);
                 p.modifyHappiness(30);
-                p.addLifeEvent("Had a child!");
                 return true;
             case "Max Retirement":
                 if (p.getCash() <= 0) return false;
                 double retirement = p.getCash() * 0.80;
                 p.addCash(-retirement);
                 p.addInvestments(retirement);
-                p.addLifeEvent("Maxed out retirement accounts.");
                 return true;
             case "Buy Boat":
                 if (p.getCash() < 40000) return false;
                 p.addCash(-40000);
                 p.modifyHappiness(30);
-                p.addLifeEvent("Bought a boat.");
                 return true;
         }
         return false;
