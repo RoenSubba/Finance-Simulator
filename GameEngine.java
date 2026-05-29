@@ -4,14 +4,13 @@ public class GameEngine {
     private static Random rand = new Random();
 
     public static void applyCompoundInterest(Person p) {
-        // Boosted base interest slightly to make compounding highly visible for early investors
         double interest = p.getCash() * 0.05; 
         p.addCash(interest);
     }
 
     public static void simulateMarketYear(Person p) {
         if (p.getInvestments() > 0) {
-            double marketReturn = (rand.nextGaussian() * 0.15) + 0.09; // 9% average return
+            double marketReturn = (rand.nextGaussian() * 0.15) + 0.09; 
             double profitOrLoss = p.getInvestments() * marketReturn;
             p.addInvestments(profitOrLoss);
         }
@@ -114,8 +113,8 @@ public class GameEngine {
         if (p.hasPartTimeJob()) flow += 12000; 
         if (p.hasCareer())      flow += 60000; 
 
-        if (p.getAge() >= 22) flow -= 20000; // Adult living costs
-        else if (p.getAge() >= 18) flow -= 5000; // College living costs
+        if (p.getAge() >= 22) flow -= 20000; 
+        else if (p.getAge() >= 18) flow -= 5000; 
         
         if (p.ownsHouse()) flow -= 24000; 
         if (p.hasKids())   flow -= 18000; 
@@ -123,65 +122,73 @@ public class GameEngine {
         return flow;
     }
 
-    public static void takeInstantAction(Person p, String action) {
+    // UPDATED: Now returns a boolean. True if successful, False if broke!
+    public static boolean takeInstantAction(Person p, String action) {
         switch (action) {
             case "Get Part-Time Job":
                 p.setPartTimeJob(true);
                 p.addLifeEvent("Hired for a part-time job.");
-                break;
+                return true;
             case "Buy Beater Car":
+                if (p.getCash() < 3000) return false;
                 p.addCash(-3000);
                 p.modifyHappiness(20);
                 p.addLifeEvent("Bought a cheap first car.");
-                break;
+                return true;
             case "Invest $1,000":
+                if (p.getCash() < 1000) return false;
                 p.addCash(-1000);
                 p.addInvestments(1000);
                 p.addLifeEvent("Started early investing! ($1,000)");
-                break;
+                return true;
             case "Take Student Loans":
-                p.addCash(20000); // Gives immediate cash for college
-                p.addInvestments(-25000); // Represents debt that must be paid down
+                p.addCash(20000); 
+                p.addInvestments(-25000); 
                 p.addLifeEvent("Took out student loans to survive college.");
-                break;
+                return true;
             case "Paid Internship":
                 p.addCash(5000);
                 p.modifyHappiness(-5);
                 p.addLifeEvent("Completed a grueling summer internship.");
-                break;
+                return true;
             case "Start Career":
                 p.setPartTimeJob(false); 
                 p.setCareer(true);
                 p.addLifeEvent("Started a professional career.");
-                break;
+                return true;
             case "Invest 50%":
+                if (p.getCash() <= 0) return false;
                 double investAmount = p.getCash() * 0.50;
                 p.addCash(-investAmount);
                 p.addInvestments(investAmount);
                 p.addLifeEvent("Moved 50% of cash into investments.");
-                break;
+                return true;
             case "Buy House":
+                if (p.getCash() < 50000) return false;
                 p.setOwnsHouse(true);
                 p.addCash(-50000); 
                 p.modifyHappiness(20);
                 p.addLifeEvent("Bought a house!");
-                break;
+                return true;
             case "Have Kids":
                 p.setHasKids(true);
                 p.modifyHappiness(30);
                 p.addLifeEvent("Had a child!");
-                break;
+                return true;
             case "Max Retirement":
+                if (p.getCash() <= 0) return false;
                 double retirement = p.getCash() * 0.80;
                 p.addCash(-retirement);
                 p.addInvestments(retirement);
                 p.addLifeEvent("Maxed out retirement accounts.");
-                break;
+                return true;
             case "Buy Boat":
+                if (p.getCash() < 40000) return false;
                 p.addCash(-40000);
                 p.modifyHappiness(30);
                 p.addLifeEvent("Bought a boat.");
-                break;
+                return true;
         }
+        return false;
     }
 }

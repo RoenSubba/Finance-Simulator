@@ -5,16 +5,16 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import javax.imageio.ImageIO;
 import java.io.File;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.List;
 
 public class GameGUI extends JFrame {
 
     private static final String WINDOW_TITLE  = "Life & Finance Simulator";
-    // WIDENED THE WINDOW to fit the new Life Feed!
     private static final int    WINDOW_WIDTH  = 1150; 
     private static final int    WINDOW_HEIGHT = 700;
     private static final String SHEET_PATH    = "assets/sheet.png"; 
     
-    // Modern Dark Theme Palette
     private static final Color BG_DARK = new Color(24, 26, 31);
     private static final Color PANEL_DARK = new Color(33, 37, 43);
     private static final Color COLOR_GOOD = new Color(152, 195, 121);
@@ -27,15 +27,17 @@ public class GameGUI extends JFrame {
     private JLabel labelHappinessText; 
     private JPanel actionPanel;
     private JPanel timeControlPanel; 
-    
-    // NEW: The Scrolling Life Feed
     private JTextPane lifeFeed; 
-    
     private ModernProgressBar nwProgressBar;
     private ModernProgressBar hapProgressBar;
 
     private Person player;
     private BufferedImage masterSheet;
+
+    // --- ANIMATION ENGINE VARIABLES ---
+    private JPanel glassPane;
+    private List<FloatingText> animations = new CopyOnWriteArrayList<>();
+    private Timer animTimer;
 
     public GameGUI(String playerName) {
         this.player = new Person(playerName);
@@ -50,14 +52,61 @@ public class GameGUI extends JFrame {
         setLocationRelativeTo(null); 
         getContentPane().setBackground(BG_DARK);
 
+        setupAnimationEngine(); // Initialize our particle system
         buildFrame();
         updateActionPanel(player.getAge());
         
-        // Log the birth event!
         logEvent("Simulation Started", "Welcome to the world, " + player.getName() + "!", null, COLOR_NEUTRAL);
-        
         setVisible(true);
     }
+
+    // --- ADVANCED GRAPHICS: FLOATING ANIMATION ENGINE ---
+    private void setupAnimationEngine() {
+        glassPane = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2 = (Graphics2D) g;
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setFont(new Font("SansSerif", Font.BOLD, 22));
+
+                for (FloatingText ft : animations) {
+                    g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, ft.alpha));
+                    g2.setColor(ft.color);
+                    g2.drawString(ft.text, ft.x, ft.y);
+                }
+            }
+        };
+        glassPane.setOpaque(false);
+        setGlassPane(glassPane);
+        glassPane.setVisible(true);
+
+        // Runs at 60 Frames Per Second to animate the floating text
+        animTimer = new Timer(16, e -> {
+            boolean needsRepaint = false;
+            for (FloatingText ft : animations) {
+                ft.y -= 2; // Float upwards
+                ft.alpha -= 0.02f; // Fade out
+                if (ft.alpha <= 0) animations.remove(ft);
+                needsRepaint = true;
+            }
+            if (needsRepaint) glassPane.repaint();
+        });
+        animTimer.start();
+    }
+
+    private void spawnAnimation(String text, Color c) {
+        // Spawns the floating text dynamically above the dashboard
+        animations.add(new FloatingText(text, 250, 250, c));
+    }
+
+    class FloatingText {
+        String text; int x, y; float alpha = 1.0f; Color color;
+        public FloatingText(String t, int x, int y, Color c) {
+            this.text = t; this.x = x; this.y = y; this.color = c;
+        }
+    }
+    // ----------------------------------------------------
 
     private void buildFrame() {
         setLayout(new BorderLayout(15, 15));
@@ -66,7 +115,6 @@ public class GameGUI extends JFrame {
         rootPanel.setBackground(BG_DARK);
         rootPanel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
         
-        // Split the screen: Left side is controls, Right side is the feed
         JPanel leftPanel = new JPanel(new BorderLayout(15, 15));
         leftPanel.setOpaque(false);
         leftPanel.add(buildStatsPanel(), BorderLayout.NORTH);
@@ -76,12 +124,11 @@ public class GameGUI extends JFrame {
         leftPanel.add(timeControlPanel, BorderLayout.SOUTH);
         
         rootPanel.add(leftPanel, BorderLayout.CENTER);
-        rootPanel.add(buildFeedPanel(), BorderLayout.EAST); // Add the new feed to the right!
+        rootPanel.add(buildFeedPanel(), BorderLayout.EAST); 
         
         add(rootPanel);
     }
 
-    // --- THE NEW LIFE FEED SYSTEM ---
     private JPanel buildFeedPanel() {
         JPanel feedContainer = new JPanel(new BorderLayout());
         TitledBorder feedBorder = BorderFactory.createTitledBorder(
@@ -90,15 +137,15 @@ public class GameGUI extends JFrame {
         feedBorder.setTitleColor(Color.WHITE);
         feedContainer.setBorder(feedBorder);
         feedContainer.setBackground(PANEL_DARK);
-        feedContainer.setPreferredSize(new Dimension(350, 0)); // Fixed width for the right column
+        feedContainer.setPreferredSize(new Dimension(350, 0)); 
 
         lifeFeed = new JTextPane();
         lifeFeed.setEditable(false);
-        lifeFeed.setBackground(BG_DARK); // Make the text area super dark
+        lifeFeed.setBackground(BG_DARK); 
         lifeFeed.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         JScrollPane scrollPane = new JScrollPane(lifeFeed);
-        scrollPane.setBorder(null); // Clean up the ugly default borders
+        scrollPane.setBorder(null); 
         scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         
         feedContainer.add(scrollPane, BorderLayout.CENTER);
@@ -108,8 +155,6 @@ public class GameGUI extends JFrame {
     private void logEvent(String title, String message, ImageIcon icon, Color headerColor) {
         try {
             StyledDocument doc = lifeFeed.getStyledDocument();
-            
-            // 1. Write the Colored Title
             SimpleAttributeSet titleStyle = new SimpleAttributeSet();
             StyleConstants.setForeground(titleStyle, headerColor);
             StyleConstants.setBold(titleStyle, true);
@@ -117,29 +162,22 @@ public class GameGUI extends JFrame {
             StyleConstants.setFontSize(titleStyle, 16);
             doc.insertString(doc.getLength(), title + "\n", titleStyle);
             
-            // 2. Insert the Image (Scaled down to fit text)
             if (icon != null) {
                 Image img = icon.getImage().getScaledInstance(40, 40, Image.SCALE_SMOOTH);
                 lifeFeed.setCaretPosition(doc.getLength());
                 lifeFeed.insertIcon(new ImageIcon(img));
-                doc.insertString(doc.getLength(), "  ", null); // Spacing
+                doc.insertString(doc.getLength(), "  ", null); 
             }
             
-            // 3. Write the Message Text
             SimpleAttributeSet textStyle = new SimpleAttributeSet();
             StyleConstants.setForeground(textStyle, new Color(171, 178, 191));
             StyleConstants.setFontFamily(textStyle, "SansSerif");
             StyleConstants.setFontSize(textStyle, 14);
             doc.insertString(doc.getLength(), message + "\n\n", textStyle);
             
-            // 4. Force scroll to the bottom so the player sees the newest event
             lifeFeed.setCaretPosition(doc.getLength());
-            
-        } catch (Exception e) {
-            System.out.println("Error writing to life feed.");
-        }
+        } catch (Exception e) { System.out.println("Error writing to life feed."); }
     }
-    // ---------------------------------
 
     private JPanel buildStatsPanel() {
         JPanel panel = new JPanel(new GridLayout(3, 1, 5, 10));
@@ -229,7 +267,6 @@ public class GameGUI extends JFrame {
         return panel;
     }
 
-    // NO MORE POPUPS! We just log it to the feed now.
     private void handleTimelineEvent(String msg) {
         if (msg == null) return;
         int row = 0, col = 3; 
@@ -239,9 +276,11 @@ public class GameGUI extends JFrame {
             isGoodNews = true;
             if (msg.contains("bonus")) { row = 0; col = 0; } 
             else if (msg.contains("Market") || msg.contains("Portfolio")) { row = 0; col = 4; } 
+            spawnAnimation("+$ WINDFALL!", COLOR_GOOD);
         } else {
             if (msg.contains("market") || msg.contains("correction")) { row = 1; col = 4; } 
             else if (msg.contains("career") || msg.contains("downsizing")) { row = 0; col = 2; } 
+            spawnAnimation("-$ EMERGENCY!", COLOR_BAD);
         }
 
         String title = isGoodNews ? "WINDFALL EVENT" : "CRITICAL EVENT";
@@ -252,18 +291,21 @@ public class GameGUI extends JFrame {
 
     public void updateActionPanel(int age) {
         actionPanel.removeAll();
-        JPanel buttonRow = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 20));
+        
+        // FIX 1: Using GridLayout(0, 3) ensures buttons neatly wrap and never go off-screen!
+        JPanel buttonRow = new JPanel(new GridLayout(0, 3, 15, 15));
+        buttonRow.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
         buttonRow.setOpaque(false);
 
         if (age >= 22 && !player.hasCareer()) {
-            JButton btnEmergencyJob = makeIconButton("Apply for New Job", new Color(229, 192, 123));
+            JButton btnEmergencyJob = makeIconButton("Apply for Job", new Color(229, 192, 123));
             btnEmergencyJob.addActionListener(e -> triggerAction("Start Career", 0, 2, "Back on track!"));
             buttonRow.add(btnEmergencyJob);
         }
 
         if (age >= 16 && age <= 18) {
             if (!player.hasPartTimeJob()) {
-                JButton btnJob = makeIconButton("Get Part-Time Job", COLOR_GOOD);
+                JButton btnJob = makeIconButton("Get Part-Time", COLOR_GOOD);
                 btnJob.addActionListener(e -> triggerAction("Get Part-Time Job", 0, 0, "Flipping burgers for minimum wage."));
                 buttonRow.add(btnJob);
             }
@@ -272,11 +314,11 @@ public class GameGUI extends JFrame {
             buttonRow.add(btnCar);
             
             JButton btnInvestEarly = makeIconButton("Invest $1,000", COLOR_NEUTRAL);
-            btnInvestEarly.addActionListener(e -> triggerAction("Invest $1,000", 0, 4, "Planting the seeds for compound interest."));
+            btnInvestEarly.addActionListener(e -> triggerAction("Invest $1,000", 0, 4, "Planting seeds for compound interest."));
             buttonRow.add(btnInvestEarly);
 
         } else if (age >= 19 && age <= 22) {
-            JButton btnLoan = makeIconButton("Take Student Loans", COLOR_BAD);
+            JButton btnLoan = makeIconButton("Student Loans", COLOR_BAD);
             btnLoan.addActionListener(e -> triggerAction("Take Student Loans", 0, 3, "Debt acquired to pay for textbooks."));
             
             JButton btnIntern = makeIconButton("Paid Internship", COLOR_GOOD);
@@ -334,10 +376,19 @@ public class GameGUI extends JFrame {
         actionPanel.repaint();
     }
 
-    // NO MORE POPUPS! We just log it to the feed now.
     private void triggerAction(String actionName, int row, int col, String message) {
-        GameEngine.takeInstantAction(player, actionName);
-        logEvent("Action Taken: " + actionName, message, sliceIconFromSheet(row, col), COLOR_NEUTRAL);
+        // FIX 2: Check if the action succeeds (requires sufficient funds)
+        boolean success = GameEngine.takeInstantAction(player, actionName);
+        
+        if (success) {
+            logEvent("Action Taken: " + actionName, message, sliceIconFromSheet(row, col), COLOR_NEUTRAL);
+            spawnAnimation("ACTION LOGGED", COLOR_GOOD);
+        } else {
+            // Logs an error if they try to buy something they can't afford
+            logEvent("TRANSACTION FAILED", "Insufficient funds for: " + actionName, sliceIconFromSheet(1, 3), COLOR_BAD);
+            spawnAnimation("DECLINED!", COLOR_BAD);
+        }
+        
         refreshAll();
     }
 
