@@ -1,5 +1,6 @@
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
+import javax.swing.text.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import javax.imageio.ImageIO;
@@ -8,13 +9,17 @@ import java.io.File;
 public class GameGUI extends JFrame {
 
     private static final String WINDOW_TITLE  = "Life & Finance Simulator";
-    private static final int    WINDOW_WIDTH  = 900;
-    private static final int    WINDOW_HEIGHT = 650;
+    // WIDENED THE WINDOW to fit the new Life Feed!
+    private static final int    WINDOW_WIDTH  = 1150; 
+    private static final int    WINDOW_HEIGHT = 700;
     private static final String SHEET_PATH    = "assets/sheet.png"; 
     
     // Modern Dark Theme Palette
     private static final Color BG_DARK = new Color(24, 26, 31);
     private static final Color PANEL_DARK = new Color(33, 37, 43);
+    private static final Color COLOR_GOOD = new Color(152, 195, 121);
+    private static final Color COLOR_BAD = new Color(224, 108, 117);
+    private static final Color COLOR_NEUTRAL = new Color(97, 175, 239);
 
     private JLabel labelAge;
     private JLabel labelCashFlow; 
@@ -22,6 +27,9 @@ public class GameGUI extends JFrame {
     private JLabel labelHappinessText; 
     private JPanel actionPanel;
     private JPanel timeControlPanel; 
+    
+    // NEW: The Scrolling Life Feed
+    private JTextPane lifeFeed; 
     
     private ModernProgressBar nwProgressBar;
     private ModernProgressBar hapProgressBar;
@@ -44,6 +52,10 @@ public class GameGUI extends JFrame {
 
         buildFrame();
         updateActionPanel(player.getAge());
+        
+        // Log the birth event!
+        logEvent("Simulation Started", "Welcome to the world, " + player.getName() + "!", null, COLOR_NEUTRAL);
+        
         setVisible(true);
     }
 
@@ -54,14 +66,80 @@ public class GameGUI extends JFrame {
         rootPanel.setBackground(BG_DARK);
         rootPanel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
         
-        rootPanel.add(buildStatsPanel(), BorderLayout.NORTH);
-        rootPanel.add(buildActionPanelShell(), BorderLayout.CENTER);
+        // Split the screen: Left side is controls, Right side is the feed
+        JPanel leftPanel = new JPanel(new BorderLayout(15, 15));
+        leftPanel.setOpaque(false);
+        leftPanel.add(buildStatsPanel(), BorderLayout.NORTH);
+        leftPanel.add(buildActionPanelShell(), BorderLayout.CENTER);
         
         timeControlPanel = buildTimeControlPanel();
-        rootPanel.add(timeControlPanel, BorderLayout.SOUTH);
+        leftPanel.add(timeControlPanel, BorderLayout.SOUTH);
+        
+        rootPanel.add(leftPanel, BorderLayout.CENTER);
+        rootPanel.add(buildFeedPanel(), BorderLayout.EAST); // Add the new feed to the right!
         
         add(rootPanel);
     }
+
+    // --- THE NEW LIFE FEED SYSTEM ---
+    private JPanel buildFeedPanel() {
+        JPanel feedContainer = new JPanel(new BorderLayout());
+        TitledBorder feedBorder = BorderFactory.createTitledBorder(
+            BorderFactory.createLineBorder(new Color(171, 178, 191)), "Life Timeline"
+        );
+        feedBorder.setTitleColor(Color.WHITE);
+        feedContainer.setBorder(feedBorder);
+        feedContainer.setBackground(PANEL_DARK);
+        feedContainer.setPreferredSize(new Dimension(350, 0)); // Fixed width for the right column
+
+        lifeFeed = new JTextPane();
+        lifeFeed.setEditable(false);
+        lifeFeed.setBackground(BG_DARK); // Make the text area super dark
+        lifeFeed.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        JScrollPane scrollPane = new JScrollPane(lifeFeed);
+        scrollPane.setBorder(null); // Clean up the ugly default borders
+        scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+        
+        feedContainer.add(scrollPane, BorderLayout.CENTER);
+        return feedContainer;
+    }
+
+    private void logEvent(String title, String message, ImageIcon icon, Color headerColor) {
+        try {
+            StyledDocument doc = lifeFeed.getStyledDocument();
+            
+            // 1. Write the Colored Title
+            SimpleAttributeSet titleStyle = new SimpleAttributeSet();
+            StyleConstants.setForeground(titleStyle, headerColor);
+            StyleConstants.setBold(titleStyle, true);
+            StyleConstants.setFontFamily(titleStyle, "SansSerif");
+            StyleConstants.setFontSize(titleStyle, 16);
+            doc.insertString(doc.getLength(), title + "\n", titleStyle);
+            
+            // 2. Insert the Image (Scaled down to fit text)
+            if (icon != null) {
+                Image img = icon.getImage().getScaledInstance(40, 40, Image.SCALE_SMOOTH);
+                lifeFeed.setCaretPosition(doc.getLength());
+                lifeFeed.insertIcon(new ImageIcon(img));
+                doc.insertString(doc.getLength(), "  ", null); // Spacing
+            }
+            
+            // 3. Write the Message Text
+            SimpleAttributeSet textStyle = new SimpleAttributeSet();
+            StyleConstants.setForeground(textStyle, new Color(171, 178, 191));
+            StyleConstants.setFontFamily(textStyle, "SansSerif");
+            StyleConstants.setFontSize(textStyle, 14);
+            doc.insertString(doc.getLength(), message + "\n\n", textStyle);
+            
+            // 4. Force scroll to the bottom so the player sees the newest event
+            lifeFeed.setCaretPosition(doc.getLength());
+            
+        } catch (Exception e) {
+            System.out.println("Error writing to life feed.");
+        }
+    }
+    // ---------------------------------
 
     private JPanel buildStatsPanel() {
         JPanel panel = new JPanel(new GridLayout(3, 1, 5, 10));
@@ -83,9 +161,9 @@ public class GameGUI extends JFrame {
         nwRow.setOpaque(false);
         labelNetWorthText = makeStatLabel("Net Worth: $" + (int)player.getNetWorth());
         
-        nwProgressBar = new ModernProgressBar(0, 10000, new Color(46, 204, 113)); 
+        nwProgressBar = new ModernProgressBar(0, 10000, COLOR_GOOD); 
         nwProgressBar.setValue((int)player.getNetWorth());
-        nwProgressBar.setPreferredSize(new Dimension(500, 25));
+        nwProgressBar.setPreferredSize(new Dimension(400, 25));
         nwRow.add(labelNetWorthText, BorderLayout.WEST);
         nwRow.add(nwProgressBar, BorderLayout.CENTER);
 
@@ -95,7 +173,7 @@ public class GameGUI extends JFrame {
         
         hapProgressBar = new ModernProgressBar(0, 100, new Color(241, 196, 15));
         hapProgressBar.setValue(player.getHappiness());
-        hapProgressBar.setPreferredSize(new Dimension(500, 25));
+        hapProgressBar.setPreferredSize(new Dimension(400, 25));
         hapRow.add(labelHappinessText, BorderLayout.WEST);
         hapRow.add(hapProgressBar, BorderLayout.CENTER);
 
@@ -133,7 +211,7 @@ public class GameGUI extends JFrame {
         panel.setBorder(timeBorder);
         panel.setBackground(PANEL_DARK);
 
-        JButton btnSim1  = makeIconButton("Simulate 1 Year",  new Color(97, 175, 239));
+        JButton btnSim1  = makeIconButton("Simulate 1 Year",  COLOR_NEUTRAL);
         JButton btnSim10 = makeIconButton("Simulate 10 Years", new Color(198, 120, 221));
 
         btnSim1.addActionListener(e -> {
@@ -151,6 +229,7 @@ public class GameGUI extends JFrame {
         return panel;
     }
 
+    // NO MORE POPUPS! We just log it to the feed now.
     private void handleTimelineEvent(String msg) {
         if (msg == null) return;
         int row = 0, col = 3; 
@@ -165,7 +244,10 @@ public class GameGUI extends JFrame {
             else if (msg.contains("career") || msg.contains("downsizing")) { row = 0; col = 2; } 
         }
 
-        showCustomPopup(isGoodNews ? "GOOD NEWS!" : "CRITICAL ALERT", msg, sliceIconFromSheet(row, col), isGoodNews);
+        String title = isGoodNews ? "WINDFALL EVENT" : "CRITICAL EVENT";
+        Color headerColor = isGoodNews ? COLOR_GOOD : COLOR_BAD;
+        
+        logEvent(title, msg, sliceIconFromSheet(row, col), headerColor);
     }
 
     public void updateActionPanel(int age) {
@@ -179,44 +261,41 @@ public class GameGUI extends JFrame {
             buttonRow.add(btnEmergencyJob);
         }
 
-        // STAGE 1: HIGH SCHOOL (16-18)
         if (age >= 16 && age <= 18) {
             if (!player.hasPartTimeJob()) {
-                JButton btnJob = makeIconButton("Get Part-Time Job", new Color(152, 195, 121));
+                JButton btnJob = makeIconButton("Get Part-Time Job", COLOR_GOOD);
                 btnJob.addActionListener(e -> triggerAction("Get Part-Time Job", 0, 0, "Flipping burgers for minimum wage."));
                 buttonRow.add(btnJob);
             }
-            JButton btnCar = makeIconButton("Buy Beater Car", new Color(224, 108, 117));
+            JButton btnCar = makeIconButton("Buy Beater Car", COLOR_BAD);
             btnCar.addActionListener(e -> triggerAction("Buy Beater Car", 1, 4, "It barely runs, but it's yours!"));
             buttonRow.add(btnCar);
             
-            JButton btnInvestEarly = makeIconButton("Invest $1,000", new Color(97, 175, 239));
+            JButton btnInvestEarly = makeIconButton("Invest $1,000", COLOR_NEUTRAL);
             btnInvestEarly.addActionListener(e -> triggerAction("Invest $1,000", 0, 4, "Planting the seeds for compound interest."));
             buttonRow.add(btnInvestEarly);
 
-        // STAGE 2: COLLEGE / EARLY ADULT (19-22)
         } else if (age >= 19 && age <= 22) {
-            JButton btnLoan = makeIconButton("Take Student Loans", new Color(224, 108, 117));
+            JButton btnLoan = makeIconButton("Take Student Loans", COLOR_BAD);
             btnLoan.addActionListener(e -> triggerAction("Take Student Loans", 0, 3, "Debt acquired to pay for textbooks."));
             
-            JButton btnIntern = makeIconButton("Paid Internship", new Color(152, 195, 121));
+            JButton btnIntern = makeIconButton("Paid Internship", COLOR_GOOD);
             btnIntern.addActionListener(e -> triggerAction("Paid Internship", 0, 2, "Looks great on a resume."));
             
-            JButton btnInvestEarly = makeIconButton("Invest $1,000", new Color(97, 175, 239));
+            JButton btnInvestEarly = makeIconButton("Invest $1,000", COLOR_NEUTRAL);
             btnInvestEarly.addActionListener(e -> triggerAction("Invest $1,000", 0, 4, "Every dollar matters early on."));
             
             buttonRow.add(btnLoan);
             buttonRow.add(btnIntern);
             buttonRow.add(btnInvestEarly);
 
-        // STAGE 3: YOUNG PROFESSIONAL (23-29)
         } else if (age >= 23 && age <= 29) {
             if (!player.hasCareer()) { 
-                JButton btnCareer = makeIconButton("Start Career", new Color(97, 175, 239));
+                JButton btnCareer = makeIconButton("Start Career", COLOR_NEUTRAL);
                 btnCareer.addActionListener(e -> triggerAction("Start Career", 0, 2, "Welcome to the corporate grind."));
                 buttonRow.add(btnCareer);
             }
-            JButton btnInvest = makeIconButton("Invest 50%", new Color(152, 195, 121));
+            JButton btnInvest = makeIconButton("Invest 50%", COLOR_GOOD);
             btnInvest.addActionListener(e -> triggerAction("Invest 50%", 0, 4, "Aggressive early saving."));
             buttonRow.add(btnInvest);
             
@@ -224,9 +303,8 @@ public class GameGUI extends JFrame {
             btnHouse.addActionListener(e -> triggerAction("Buy House", 1, 2, "You are a homeowner!"));
             buttonRow.add(btnHouse);
 
-        // STAGE 4: ADULTHOOD (30-50)
         } else if (age >= 30 && age <= 50) {
-            JButton btnInvest = makeIconButton("Invest 50%", new Color(152, 195, 121));
+            JButton btnInvest = makeIconButton("Invest 50%", COLOR_GOOD);
             btnInvest.addActionListener(e -> triggerAction("Invest 50%", 0, 4, "Accelerating investments."));
             
             JButton btnKids = makeIconButton("Have Kids", new Color(198, 120, 221));
@@ -235,12 +313,11 @@ public class GameGUI extends JFrame {
             buttonRow.add(btnInvest);
             buttonRow.add(btnKids);
 
-        // STAGE 5: PRE-RETIREMENT (51-64)
         } else if (age >= 51 && age < 65) {
-            JButton btnRetire = makeIconButton("Max Retirement", new Color(97, 175, 239));
+            JButton btnRetire = makeIconButton("Max Retirement", COLOR_NEUTRAL);
             btnRetire.addActionListener(e -> triggerAction("Max Retirement", 1, 4, "Catch-up contributions."));
             
-            JButton btnBoat = makeIconButton("Buy Boat", new Color(224, 108, 117));
+            JButton btnBoat = makeIconButton("Buy Boat", COLOR_BAD);
             btnBoat.addActionListener(e -> triggerAction("Buy Boat", 2, 1, "The two happiest days..."));
             
             buttonRow.add(btnRetire);
@@ -257,9 +334,10 @@ public class GameGUI extends JFrame {
         actionPanel.repaint();
     }
 
+    // NO MORE POPUPS! We just log it to the feed now.
     private void triggerAction(String actionName, int row, int col, String message) {
         GameEngine.takeInstantAction(player, actionName);
-        showCustomPopup(actionName, message, sliceIconFromSheet(row, col), true);
+        logEvent("Action Taken: " + actionName, message, sliceIconFromSheet(row, col), COLOR_NEUTRAL);
         refreshAll();
     }
 
@@ -270,37 +348,6 @@ public class GameGUI extends JFrame {
             BufferedImage cropped = masterSheet.getSubimage(col * boxW, row * boxH, boxW, boxH);
             return new ImageIcon(cropped.getScaledInstance(120, 120, Image.SCALE_SMOOTH));
         } catch (Exception ex) { return null; }
-    }
-
-    private void showCustomPopup(String title, String message, ImageIcon icon, boolean isGoodNews) {
-        JDialog dialog = new JDialog(this, title, true);
-        dialog.setLayout(new BorderLayout());
-        dialog.getContentPane().setBackground(PANEL_DARK); 
-
-        JLabel imageLabel = new JLabel(icon);
-        imageLabel.setBorder(BorderFactory.createEmptyBorder(20, 20, 10, 20));
-
-        String colorHex = isGoodNews ? "#98c379" : "#e06c75"; 
-        String htmlText = "<html><div style='text-align: center; width: 250px; font-family: sans-serif;'>"
-                        + "<h2 style='color: " + colorHex + ";'>" + title + "</h2>"
-                        + "<p style='color: white; font-size: 14px;'>" + message + "</p></div></html>";
-        
-        JLabel textLabel = new JLabel(htmlText, SwingConstants.CENTER);
-        textLabel.setBorder(BorderFactory.createEmptyBorder(0, 20, 20, 20));
-
-        JButton closeBtn = makeIconButton("Continue", new Color(97, 175, 239));
-        closeBtn.addActionListener(e -> dialog.dispose()); 
-
-        JPanel buttonPanel = new JPanel();
-        buttonPanel.setBackground(PANEL_DARK);
-        buttonPanel.add(closeBtn);
-
-        dialog.add(imageLabel, BorderLayout.NORTH);
-        dialog.add(textLabel, BorderLayout.CENTER);
-        dialog.add(buttonPanel, BorderLayout.SOUTH);
-        dialog.pack();
-        dialog.setLocationRelativeTo(this); 
-        dialog.setVisible(true); 
     }
 
     private String getLifeStageName(int age) {
@@ -329,13 +376,15 @@ public class GameGUI extends JFrame {
         summary.add(Box.createVerticalStrut(20));
         summary.add(makeGameOverLabel("Happy 65th Birthday, " + player.getName() + "!", Color.WHITE, 24));
         summary.add(Box.createVerticalStrut(20));
-        summary.add(makeGameOverLabel(String.format("Final Net Worth: $%,d", (int)nw), new Color(152, 195, 121), 22));
+        summary.add(makeGameOverLabel(String.format("Final Net Worth: $%,d", (int)nw), COLOR_GOOD, 22));
         summary.add(Box.createVerticalStrut(10));
-        summary.add(makeGameOverLabel("Retirement Rank: " + title, new Color(97, 175, 239), 18));
+        summary.add(makeGameOverLabel("Retirement Rank: " + title, COLOR_NEUTRAL, 18));
         
         actionPanel.add(summary, BorderLayout.CENTER);
         actionPanel.revalidate();
         actionPanel.repaint();
+        
+        logEvent("RETIREMENT REACHED", "Final Rank: " + title + " | Net Worth: $" + (int)nw, null, COLOR_GOOD);
     }
     
     private JLabel makeGameOverLabel(String text, Color c, int size) {
@@ -351,18 +400,14 @@ public class GameGUI extends JFrame {
         labelCashFlow.setText("Cash Flow: $" + (int)GameEngine.getAnnualCashFlow(player) + "/yr");
         
         int currentNW = (int)player.getNetWorth();
-        
-        // DYNAMIC MILESTONE MATH! (Fixes the $2M limit)
         int nextMilestone = 10000;
         if (currentNW > 10000) nextMilestone = 100000;
         if (currentNW > 100000) nextMilestone = 1000000;
         if (currentNW > 1000000) nextMilestone = 5000000;
-        if (currentNW > 5000000) nextMilestone = 25000000; // Super wealthy!
+        if (currentNW > 5000000) nextMilestone = 25000000; 
         
         nwProgressBar.setMaximum(nextMilestone);
-        // Force the progress bar to drop to 0 if they go into debt
         nwProgressBar.setValue(Math.max(0, currentNW)); 
-        
         labelNetWorthText.setText(String.format("Net Worth: $%,d / $%,d", currentNW, nextMilestone));
         
         hapProgressBar.setValue(player.getHappiness());
@@ -372,7 +417,6 @@ public class GameGUI extends JFrame {
         else updateActionPanel(player.getAge());
     }
 
-    // --- ADVANCED GRAPHICS: CUSTOM DROP-SHADOW BUTTONS ---
     private JButton makeIconButton(String label, Color bgColor) {
         JButton button = new JButton(label) {
             @Override
@@ -380,11 +424,9 @@ public class GameGUI extends JFrame {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 
-                // Draw Drop Shadow
                 g2.setColor(new Color(0, 0, 0, 80));
                 g2.fillRoundRect(2, 4, getWidth()-4, getHeight()-4, 15, 15);
                 
-                // Draw Actual Button
                 if (getModel().isRollover()) g2.setColor(bgColor.brighter());
                 else g2.setColor(bgColor);
                 g2.fillRoundRect(0, 0, getWidth()-4, getHeight()-4, 15, 15);
@@ -403,7 +445,6 @@ public class GameGUI extends JFrame {
         return button;
     }
 
-    // --- ADVANCED GRAPHICS: MODERN PROGRESS BAR ---
     class ModernProgressBar extends JProgressBar {
         private Color barColor;
         public ModernProgressBar(int min, int max, Color color) {
@@ -417,7 +458,6 @@ public class GameGUI extends JFrame {
             Graphics2D g2 = (Graphics2D) g.create();
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             
-            // Background Track
             g2.setColor(new Color(15, 15, 25)); 
             g2.fillRoundRect(0, 0, getWidth(), getHeight(), 20, 20);
             
