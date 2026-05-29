@@ -22,6 +22,7 @@ public class GameEngine {
         double oldInvest = p.getInvestments();
         boolean oldCareer = p.hasCareer();
 
+        // Process annual cash flow
         p.addCash(getAnnualCashFlow(p));
         if (p.hasPartTimeJob()) p.modifyHappiness(-5);
         if (p.hasCareer())      p.modifyHappiness(-10);
@@ -30,13 +31,16 @@ public class GameEngine {
         simulateMarketYear(p);
         p.addAge(1);
 
+        // Check if the random layoff triggered during core flow mechanics
         if (oldCareer && !p.hasCareer()) {
             return "EMERGENCY: Corporate downsizing! You lost your career. Income dropped to $0.";
         }
 
+        // --- RANDOM EVENT ENGINE (Adulthood) ---
         if (p.getAge() >= 22) {
             double eventRoll = rand.nextDouble();
             
+            // 15% Chance of an Emergency (Negative)
             if (eventRoll < 0.15) {
                 int eventType = rand.nextInt(4);
                 switch (eventType) {
@@ -69,6 +73,7 @@ public class GameEngine {
                         break;
                 }
             } 
+            // 15% Chance of a WINDFALL (Positive!)
             else if (eventRoll > 0.85) {
                 int windfallType = rand.nextInt(3);
                 switch (windfallType) {

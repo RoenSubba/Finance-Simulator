@@ -1,4 +1,5 @@
 import javax.swing.*;
+import javax.swing.border.TitledBorder;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -15,6 +16,8 @@ public class GameGUI extends JFrame {
 
     private JLabel labelAge;
     private JLabel labelCashFlow; 
+    private JLabel labelNetWorthText; 
+    private JLabel labelHappinessText; 
     private JPanel actionPanel;
     private JPanel timeControlPanel; 
     
@@ -57,11 +60,15 @@ public class GameGUI extends JFrame {
 
     private JPanel buildStatsPanel() {
         JPanel panel = new JPanel(new GridLayout(3, 1, 5, 5));
-        panel.setBorder(BorderFactory.createTitledBorder(
+        
+        TitledBorder dashBorder = BorderFactory.createTitledBorder(
             BorderFactory.createLineBorder(Color.GRAY), "Player Dashboard: " + player.getName()
-        ));
+        );
+        dashBorder.setTitleColor(Color.WHITE);
+        panel.setBorder(dashBorder);
         panel.setBackground(new Color(30, 30, 50));
 
+        // 1. Top Row: Age & Cash Flow
         JPanel textRow = new JPanel(new FlowLayout(FlowLayout.CENTER, 30, 0));
         textRow.setOpaque(false);
         labelAge      = makeStatLabel("Age: " + player.getAge());
@@ -69,38 +76,30 @@ public class GameGUI extends JFrame {
         textRow.add(labelAge);
         textRow.add(labelCashFlow);
 
+        // 2. Middle Row: Net Worth Visualizer (Custom Gradient Bar)
         JPanel nwRow = new JPanel(new BorderLayout(10, 0));
         nwRow.setOpaque(false);
-        JLabel nwLabel = makeStatLabel("Net Worth:");
+        labelNetWorthText = makeStatLabel("Net Worth: $" + (int)player.getNetWorth() + " / $2,000,000");
         
-        JProgressBar nwBar = new JProgressBar(0, 2000000); 
+        ModernProgressBar nwBar = new ModernProgressBar(0, 2000000, new Color(46, 204, 113)); 
         nwBar.setValue((int)player.getNetWorth());
-        nwBar.setStringPainted(true);
-        nwBar.setString("$" + (int)player.getNetWorth() + " / $2,000,000");
-        nwBar.setForeground(new Color(46, 204, 113)); 
-        nwBar.setBackground(new Color(20, 20, 30));
-        nwBar.setPreferredSize(new Dimension(500, 25));
+        nwBar.setPreferredSize(new Dimension(400, 20));
         
-        nwRow.add(nwLabel, BorderLayout.WEST);
+        nwRow.add(labelNetWorthText, BorderLayout.WEST);
         nwRow.add(nwBar, BorderLayout.CENTER);
-        
         this.nwProgressBar = nwBar;   
 
+        // 3. Bottom Row: Happiness Visualizer (Custom Gradient Bar)
         JPanel hapRow = new JPanel(new BorderLayout(10, 0));
         hapRow.setOpaque(false);
-        JLabel hapLabel = makeStatLabel("Happiness:");
+        labelHappinessText = makeStatLabel("Happiness: " + player.getHappiness() + " / 100");
         
-        JProgressBar hapBar = new JProgressBar(0, 100);
+        ModernProgressBar hapBar = new ModernProgressBar(0, 100, new Color(241, 196, 15));
         hapBar.setValue(player.getHappiness());
-        hapBar.setStringPainted(true);
-        hapBar.setString(player.getHappiness() + " / 100");
-        hapBar.setForeground(new Color(241, 196, 15)); 
-        hapBar.setBackground(new Color(20, 20, 30));
-        hapBar.setPreferredSize(new Dimension(500, 25));
+        hapBar.setPreferredSize(new Dimension(400, 20));
         
-        hapRow.add(hapLabel, BorderLayout.WEST);
+        hapRow.add(labelHappinessText, BorderLayout.WEST);
         hapRow.add(hapBar, BorderLayout.CENTER);
-        
         this.hapProgressBar = hapBar; 
 
         panel.add(textRow);
@@ -119,14 +118,26 @@ public class GameGUI extends JFrame {
 
     private JPanel buildActionPanelShell() {
         actionPanel = new JPanel(new BorderLayout()); 
-        actionPanel.setBorder(BorderFactory.createTitledBorder("Actions"));
+        
+        TitledBorder actionBorder = BorderFactory.createTitledBorder(
+            BorderFactory.createLineBorder(Color.GRAY), "Actions"
+        );
+        actionBorder.setTitleColor(Color.WHITE);
+        actionPanel.setBorder(actionBorder);
+        
         actionPanel.setBackground(new Color(20, 20, 40));
         return actionPanel;
     }
 
     private JPanel buildTimeControlPanel() {
         JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 10));
-        panel.setBorder(BorderFactory.createTitledBorder("Time Controls"));
+        
+        TitledBorder timeBorder = BorderFactory.createTitledBorder(
+            BorderFactory.createLineBorder(Color.GRAY), "Time Controls"
+        );
+        timeBorder.setTitleColor(Color.WHITE);
+        panel.setBorder(timeBorder);
+        
         panel.setBackground(new Color(30, 30, 50));
 
         JButton btnSim1  = makeIconButton("Simulate 1 Year",  new Color(150, 200, 150));
@@ -432,10 +443,10 @@ public class GameGUI extends JFrame {
         labelCashFlow.setText("Cash Flow: $" + (int)GameEngine.getAnnualCashFlow(player) + "/yr");
         
         nwProgressBar.setValue((int)player.getNetWorth());
-        nwProgressBar.setString("$" + (int)player.getNetWorth() + " / $2,000,000");
-        
         hapProgressBar.setValue(player.getHappiness());
-        hapProgressBar.setString(player.getHappiness() + " / 100");
+        
+        labelNetWorthText.setText(String.format("Net Worth: $%,d / $2,000,000", (int)player.getNetWorth()));
+        labelHappinessText.setText("Happiness: " + player.getHappiness() + " / 100");
         
         if (player.getAge() >= 65) {
             showGameOverScreen();
@@ -444,17 +455,66 @@ public class GameGUI extends JFrame {
         }
     }
 
+    // --- ADVANCED GRAPHICS: CUSTOM HOVER BUTTONS ---
     private JButton makeIconButton(String label, Color bgColor) {
-        JButton button = new JButton(label); 
-        button.setBackground(bgColor);
+        JButton button = new JButton(label) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                
+                if (getModel().isRollover()) {
+                    g2.setColor(bgColor.brighter());
+                } else {
+                    g2.setColor(bgColor);
+                }
+                
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 15, 15);
+                super.paintComponent(g); 
+                g2.dispose();
+            }
+        }; 
+        
+        button.setContentAreaFilled(false);
+        button.setFocusPainted(false);
+        button.setBorderPainted(false);
         button.setForeground(Color.BLACK); 
         button.setFont(new Font("SansSerif", Font.BOLD, 14)); 
-        button.setFocusPainted(false);
-        button.setOpaque(true); 
-        button.setBorderPainted(true);
         button.setPreferredSize(new Dimension(170, 60)); 
         button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        
         return button;
+    }
+
+    // --- ADVANCED GRAPHICS: CUSTOM PROGRESS BAR ---
+    class ModernProgressBar extends JProgressBar {
+        private Color barColor;
+
+        public ModernProgressBar(int min, int max, Color color) {
+            super(min, max);
+            this.barColor = color;
+            setOpaque(false);
+            setBorderPainted(false);
+            setStringPainted(false);
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            
+            g2.setColor(new Color(15, 15, 25)); 
+            g2.fillRoundRect(0, 0, getWidth(), getHeight(), 20, 20);
+            
+            int fillWidth = (int) (getWidth() * getPercentComplete());
+            
+            if (fillWidth > 0) {
+                GradientPaint gp = new GradientPaint(0, 0, barColor.darker(), fillWidth, 0, barColor.brighter().brighter());
+                g2.setPaint(gp);
+                g2.fillRoundRect(0, 0, fillWidth, getHeight(), 20, 20);
+            }
+            g2.dispose();
+        }
     }
 
     public static void main(String[] args) {
